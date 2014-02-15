@@ -1,1 +1,1 @@
-"./tm4c123ge6pm_startup_ccs.obj" "./blinky.obj" "/home/mreut/Development/CCS/tivaware/driverlib/ccs/Debug/driverlib.lib" "../tm4c123ge6pm.cmd" -l"libc.a" 
+"./tm4c123ge6pm_startup_ccs.obj" "./test.obj" "/home/mreut/Development/CCS/tivaware/driverlib/ccs/Debug/driverlib.lib" "../tm4c123ge6pm.cmd" -l"libc.a" 
