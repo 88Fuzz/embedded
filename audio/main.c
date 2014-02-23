@@ -34,6 +34,9 @@ uint8_t ui8ControlTable[1024];
 // Timer0 Interrupt
 //
 //*****************************************************************************
+
+// TODO: CHANGE SETUP SUCH THAT DMA TRANSFERS ARE UTILIZED
+
 uint8_t ui16SSITransmitBuffer[DAC_WORD_SIZE];
 uint8_t ui16SSIRecieveBuffer[DAC_WORD_SIZE];
 void Timer0IntHandler(void)
@@ -105,6 +108,7 @@ main(void)
 						   (void*) ui16SSIRecieveBuffer,
 						   sizeof(ui16SSITransmitBuffer));
 	uDMAChannelEnable(UDMA_CHANNEL_SSI0TX);
+	uDMAEnable();
 
 
 	// configure timer module
