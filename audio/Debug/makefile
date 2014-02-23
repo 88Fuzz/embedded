@@ -7,7 +7,7 @@ CG_TOOL_ROOT := /home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1
 ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
 "./tm4c123ge6pm_startup_ccs.obj" \
-"./test.obj" \
+"./main.obj" \
 "/home/mreut/Development/CCS/tivaware/driverlib/ccs/Debug/driverlib.lib" \
 "../tm4c123ge6pm.cmd" \
 -l"libc.a" \
@@ -109,21 +109,21 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: test0.out
+all: audio.out
 
 # Tool invocations
-test0.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
+audio.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: ARM Linker'
-	"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=PART_TM4C123GH6PM --diag_warning=225 --display_error_number --diag_wrap=off -z -m"test0.map" --heap_size=0 --stack_size=200 -i"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/lib" -i"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="test0_linkInfo.xml" --rom_model -o "test0.out" $(ORDERED_OBJS)
+	"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 --abi=eabi -me -g --define=PART_TM4C123GH6PM --diag_warning=225 --display_error_number --diag_wrap=off -z -m"audio.map" --heap_size=0 --stack_size=200 -i"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/lib" -i"/home/mreut/Development/CCS/ccsv5/tools/compiler/arm_5.1.1/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="audio_linkInfo.xml" --rom_model -o "audio.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED) "test0.out"
-	-$(RM) "test.pp" "tm4c123ge6pm_startup_ccs.pp" 
-	-$(RM) "test.obj" "tm4c123ge6pm_startup_ccs.obj" 
+	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED) "audio.out"
+	-$(RM) "main.pp" "tm4c123ge6pm_startup_ccs.pp" 
+	-$(RM) "main.obj" "tm4c123ge6pm_startup_ccs.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
