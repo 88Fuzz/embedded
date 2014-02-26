@@ -8,6 +8,7 @@ ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
 "./tm4c123ge6pm_startup_ccs.obj" \
 "./main.obj" \
+"./dsp.obj" \
 "/home/mreut/Development/CCS/tivaware/driverlib/ccs/Debug/driverlib.lib" \
 "../tm4c123ge6pm.cmd" \
 -l"libc.a" \
@@ -122,8 +123,8 @@ audio.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED) "audio.out"
-	-$(RM) "main.pp" "tm4c123ge6pm_startup_ccs.pp" 
-	-$(RM) "main.obj" "tm4c123ge6pm_startup_ccs.obj" 
+	-$(RM) "dsp.pp" "main.pp" "tm4c123ge6pm_startup_ccs.pp" 
+	-$(RM) "dsp.obj" "main.obj" "tm4c123ge6pm_startup_ccs.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
