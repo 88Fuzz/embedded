@@ -28,37 +28,37 @@
 
 //*****************************************************************************
 //
-// Interrupt Vectors
+// static global defines
 //
 //*****************************************************************************
 
-uint8_t ui16SSITransmitBuffer[DAC_BYTE_SIZE] = {0xFF, 0x00, 0xFF};
-//uint8_t ui16SSIRecieveBuffer[DAC_BYTE_SIZE];
+//static uint8_t pui8SPITxBuffer[4] = {0xFF, 0x00, 0xFF, 0x00};
+
+static uint32_t ui32OutSample = 0x00000000;
+static uint8_t* pui8SPITx;
+static uint32_t ui32State = 0;
+//*****************************************************************************
+//
+// Interrupt Vectors
+//
+//*****************************************************************************
 void Timer0IntHandler(void)
 {
 	// clear the interrupt
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 
+	pui8SPITx = (uint8_t*)&ui32OutSample;
+	pui8SPITx[2] |= DAC_MASK_WRITE;
 	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 0);
 
 	// send sample out
-	SSIDataPutNonBlocking(SSI0_BASE, ui16SSITransmitBuffer[0]);
-	SSIDataPutNonBlocking(SSI0_BASE, ui16SSITransmitBuffer[1]);
-	SSIDataPutNonBlocking(SSI0_BASE, ui16SSITransmitBuffer[2]);
+	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[2]);
+	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[1]);
+	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[0]);
 
 	while(SSIBusy(SSI0_BASE)) {}
 	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
-	/*
-	if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_2))
-	{
-		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
-	}
-	else
-	{
-		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 4);
-	}
-	*/
-	//GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);
+	ui32State = 0;
 }
 
 
@@ -90,9 +90,9 @@ void InitializeSPI()
 	GPIOPinConfigure(GPIO_PA5_SSI0TX);
 	GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_3);
 	GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_2);
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_2,
 					   SSI_MODE_MASTER, SysCtlClockGet()/3, 8);
-	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 1);
+	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
 	SSIEnable(SSI0_BASE);
 }
 
@@ -110,17 +110,41 @@ void InitializeTimer()
 	TimerEnable(TIMER0_BASE, TIMER_A);
 }
 
+
 //*****************************************************************************
 //
-// Peripheral Initializations
+// helper functions
 //
+
 //*****************************************************************************
-int
-main(void)
+/*
+inline void PrepareSampleSPITx(float fInputSample)
 {
+	(uint32_t *)pui8SPITxBuffer = (uint32_t) (DAC_MASK_WRITE | ((UINT16_MAX * fInputSample) << 22));
+	uint32_t ui32InputSample = (uint32_t) UINT16_MAX * fInputSample;
+	*(uint32	_t *)pui8SPITxBuffer = DAC_MASK_WRITE | (ui32InputSample << 22);
+}
+*/
+
+//*****************************************************************************
+//
+// main routine
+//
+//*****************************************************************************
+int main(void)
+{
+	float fOutSample;
+	uint32_t n = 0;
+
+	float fRadians;
+	float pfSineTable[1024];
+
 	// configure operating frequency to be at 80 MHz, system maximum
 	// system clock calculation: 400 MHz(PLL) / 2(system) / 2.5(divisor) = 80 MHz
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+
+	// configure FPU
+	InitializeFPU();
 
 	// configure SPI peripheral
 	InitializeSPI();
@@ -131,9 +155,26 @@ main(void)
 	// start the timer module
 	InitializeTimer();
 
+	fRadians = (2 * 3.14159265) / 1024;
+	while (n < 1024)
+	{
+		pfSineTable[n] = sinf(fRadians * n);
+		n++;
+	}
+	n = 0;
 	while(1)
 	{
-		// raise your dongers
+		if (ui32State != 1)
+		{
+			// raise your dongers
+			fOutSample = pfSineTable[n++];
+			n = n >= 1024 ? 0 : n;
+			fOutSample /= 2.2;
+			fOutSample += 0.5;
+			ui32OutSample = (uint32_t) UINT16_MAX * (fOutSample);
+			ui32OutSample <<= 6;
+			ui32State = 1;
+		}
 	}
 
 }
