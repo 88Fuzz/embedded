@@ -26,6 +26,9 @@
 #include "dac.h"
 #include "dsp.h"
 
+#define FALSE 	0
+#define TRUE 	1
+
 //*****************************************************************************
 //
 // static global defines
@@ -102,7 +105,7 @@ void InitializeTimer()
 	uint32_t ui32Period;
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
-	ui32Period = SysCtlClockGet() / 44100;
+	ui32Period = SysCtlClockGet() / VALUE_SAMPLE_RATE;
 	TimerLoadSet(TIMER0_BASE, TIMER_A, ui32Period-1);
 	IntEnable(INT_TIMER0A);
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
@@ -110,35 +113,8 @@ void InitializeTimer()
 	TimerEnable(TIMER0_BASE, TIMER_A);
 }
 
-
-//*****************************************************************************
-//
-// helper functions
-//
-
-//*****************************************************************************
-/*
-inline void PrepareSampleSPITx(float fInputSample)
+void InitializeSystem()
 {
-	(uint32_t *)pui8SPITxBuffer = (uint32_t) (DAC_MASK_WRITE | ((UINT16_MAX * fInputSample) << 22));
-	uint32_t ui32InputSample = (uint32_t) UINT16_MAX * fInputSample;
-	*(uint32	_t *)pui8SPITxBuffer = DAC_MASK_WRITE | (ui32InputSample << 22);
-}
-*/
-
-//*****************************************************************************
-//
-// main routine
-//
-//*****************************************************************************
-int main(void)
-{
-	float fOutSample;
-	uint32_t n = 0;
-
-	float fRadians;
-	float pfSineTable[1024];
-
 	// configure operating frequency to be at 80 MHz, system maximum
 	// system clock calculation: 400 MHz(PLL) / 2(system) / 2.5(divisor) = 80 MHz
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
@@ -151,22 +127,45 @@ int main(void)
 
 	// configure GPIO pins
 	InitializeGPIO();
+}
+
+//*****************************************************************************
+//
+// main routine
+//
+//*****************************************************************************
+float fOutSample;
+uint32_t n = 0;
+
+float fRadians;
+float pfSineTable[SIZE_LOOKUP_TABLE];
+
+Note NoteTable[SIZE_NOTE_ARRAY];
+
+int main(void)
+{
+	ui32State = 0;
+
+	InitializeSystem();
+
+	SineInitialize();
 
 	// start the timer module
 	InitializeTimer();
 
-	fRadians = (2 * 3.14159265) / 1024;
-	while (n < 1024)
+	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
-		pfSineTable[n] = sinf(fRadians * n);
-		n++;
+		NoteInitialize(&NoteTable[n], 440.0);
 	}
-	n = 0;
+
+	NoteOn(&NoteTable[0]);
+
 	while(1)
 	{
-		if (ui32State != 1)
+		if (ui32State != TRUE)
 		{
 			// raise your dongers
+			/*
 			fOutSample = pfSineTable[n++];
 			n = n >= 1024 ? 0 : n;
 			fOutSample /= 2.2;
@@ -174,6 +173,7 @@ int main(void)
 			ui32OutSample = (uint32_t) UINT16_MAX * (fOutSample);
 			ui32OutSample <<= 6;
 			ui32State = 1;
+			*/
 		}
 	}
 
