@@ -1,6 +1,33 @@
-#include <stdbool.h>
+/**************************************************************************/
+/*!
+    @file     Adafruit_RA8875.cpp
+    @author   Limor Friend/Ladyada, K.Townsend/KTOWN for Adafruit Industries
+    @license  BSD license, all text above and below must be included in
+              any redistribution
+
+ This is the library for the Adafruit RA8875 Driver board for TFT displays
+ ---------------> http://www.adafruit.com/products/1590
+ The RA8875 is a TFT driver for up to 800x480 dotclock'd displays
+ It is tested to work with displays in the Adafruit shop. Other displays
+ may need timing adjustments and are not guanteed to work.
+
+ Adafruit invests time and resources providing this open
+ source code, please support Adafruit and open-source hardware
+ by purchasing products from Adafruit!
+
+ Written by Limor Fried/Ladyada for Adafruit Industries.
+ BSD license, check license.txt for more information.
+ All text above must be included in any redistribution.
+
+    @section  HISTORY
+
+    v1.0 - First release
+*/
+/**************************************************************************/
+#define PART_TM4C123GH6PM
+//#include <SPI.h>
 #include <stdint.h>
-#include <string.h>
+#include <stdbool.h>
 #include "ra8875.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ssi.h"
@@ -9,104 +36,189 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
+#include "myFuncs.h"
 
 
 
 
 
-LCDdisp ra8875;
 
-void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
+
+void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
+		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
+		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
+		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs, uint32_t SSICS_pin,
 		uint32_t cs_pin, uint32_t rst_pin, uint32_t base_ssi,
 		uint32_t SSICLK_pin, uint32_t SSIRX_pin, uint32_t SSITX_pin,
+		uint32_t base_int, uint32_t touch_int,
 		uint16_t width, uint16_t height)
 {
+	ra8875.GPIOcfg=GPIOcfg;
 	ra8875.base_cs=base_cs;
 	ra8875.base_rst=base_rst;
 	ra8875.cs=cs_pin;
 	ra8875.rst=rst_pin;
+	ra8875.SSIcfg=SSIcfg;
+	ra8875.SSIGPIOcfg=SSIGPIOcfg;
 	ra8875.base_ssi=base_ssi;
+	ra8875.SSIcfg_clk=SSIcfg_clk;
+	ra8875.SSIcfg_rx=SSIcfg_rx;
+	ra8875.SSIcfg_tx=SSIcfg_tx;
+	ra8875.SSIcfg_cs=SSIcfg_cs;
+	ra8875.ssi_cs=SSICS_pin;
 	ra8875.ssi_clk=SSICLK_pin;
 	ra8875.ssi_rx=SSIRX_pin;
 	ra8875.ssi_tx=SSITX_pin;
-  ra8875.width=width;
-  ra8875.height=height;
+	ra8875.width=width;
+	ra8875.height=height;
+	ra8875.textScale=1;
+	ra8875.base_int=base_int;
+	ra8875.touch_int=touch_int;
 }
 
-bool ra_begin()
+
+
+
+
+/**************************************************************************/
+/*!
+      Initialises the LCD driver and any HW required by the display
+
+      @args s[in] The display size, which can be either:
+                  'RA8875_480x272' (4.3" displays) r
+                  'RA8875_800x480' (5" and 7" displays)
+*/
+/**************************************************************************/
+bool begin()
 {
-  //TODO set CS and RST pins as GPIO based on actual ra8875 values!!!!
-	uint8_t j;
-	uint32_t tmp;
+	SysCtlPeripheralEnable(ra8875.GPIOcfg);
 
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-	GPIOPinTypeGPIOOutput(ra8875.base_cs,ra8875.cs|ra8875.rst);
+	//pinMode(_cs, OUTPUT);
+	GPIOPinTypeGPIOOutput(ra8875.base_cs,ra8875.cs);
 
-	//set cs high
+	//pinMode(_rst, OUTPUT);
+	GPIOPinTypeGPIOOutput(ra8875.base_rst,ra8875.rst);
+
+	//Touch int-ish
+	GPIOPinTypeGPIOInput(ra8875.base_int, ra8875.touch_int);
+
+	//digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
-	GPIOPinWrite(ra8875.base_rst, ra8875.rst, 0xFF);
 
-	//WAIT 1ms
-	SysCtlDelay(ONE_MILISEC);//assumes 80MHz clk
-
-	//set cs low
-//	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-
-	//set rst low
+	//digitalWrite(_rst, LOW);
 	GPIOPinWrite(ra8875.base_rst, ra8875.rst, 0);
 
-	//WAIT 1ms
-	SysCtlDelay(ONE_MILISEC);//assumes 80MHz clk
+	//delay(100);
+	SysCtlDelay(ONE_MILISEC);
 
-	//set rst high
+	//digitalWrite(_rst, HIGH);
 	GPIOPinWrite(ra8875.base_rst, ra8875.rst, 0xFF);
 
-	for(j=0;j<10;j++)
-		SysCtlDelay(ONE_MILISEC);
+	//delay(100);
+	SysCtlDelay(ONE_MILISEC);
 
-	//TODO MOVE THIS TO initRA8875pins
+	//SPI.begin();
+	//#ifdef __AVR__
+	//SPI.setClockDivider(SPI_CLOCK_DIV128);
+	//SPI.setDataMode(SPI_MODE0);
+	//#endif
+
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+	//SysCtlPeripheralEnable(ra8875.SSIcfg);
+	//SysCtlPeripheralEnable(ra8875.SSIGPIOcfg);
 
 	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
 	//GPIOPinConfigure(GPIO_PA3_SSI0FSS);
 	GPIOPinConfigure(GPIO_PA4_SSI0RX);
 	GPIOPinConfigure(GPIO_PA5_SSI0TX);
-	//GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_3|GPIO_PIN_2);
-	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_4|GPIO_PIN_2);
 
-	tmp=SysCtlClockGet();
-	tmp/=640;
-	//SPI.setClockDivider(SPI_CLOCK_DIV128);    SPI.setDataMode(SPI_MODE0);
-	SSIConfigSetExpClk(SSI0_BASE, 640, SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1, 8);
-	tmp=SSIClockSourceGet(SSI0_BASE);
+	//GPIOPinConfigure(ra8875.SSIcfg_clk);
+	//GPIOPinConfigure(ra8875.SSIcfg_cs);
+	//GPIOPinConfigure(ra8875.SSIcfg_rx);
+	//GPIOPinConfigure(ra8875.SSIcfg_tx);
+
+	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|/*GPIO_PIN_3|*/GPIO_PIN_4|GPIO_PIN_2);
+
+	//GPIOPinTypeSSI(ra8875.base_ssi,ra8875.ssi_clk|ra8875.ssi_cs|ra8875.ssi_rx|ra8875.ssi_tx);
+
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 125000, 8);
+
+	//SSIConfigSetExpClk(ra8875.base_ssi, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 125000, 8);
 
 	SSIEnable(SSI0_BASE);
+	//SSIEnable(ra8875.base_ssi);
 
-	ra_initialize();
 
-	tmp=SysCtlClockGet()/20;
+	if (readReg(0) != 0x75)
+	{
+		return false;
+	}
+
+	initialize();
+
+	//#ifdef __AVR__
 	//SPI.setClockDivider(SPI_CLOCK_DIV4);
-	//SSIClockSourceSet(SSI0_BASE, 20);
+	//#endif
+
 	SSIDisable(SSI0_BASE);
-	SSIConfigSetExpClk(SSI0_BASE, 20, SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1, 8);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);
 	SSIEnable(SSI0_BASE);
 
-	tmp=SSIClockSourceGet(SSI0_BASE);
+	//SSIDisable(ra8875.base_ssi);
+	//SSIConfigSetExpClk(ra8875.base_ssi, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);
+	//SSIEnable(ra8875.base_ssi);
 
-  return true;
+	return true;
 }
 
-void ra_PLLinit()
-{
-	writeReg(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
-	SysCtlDelay(ONE_MILISEC);//assumes 80MHz clk
-  	writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
-  	SysCtlDelay(ONE_MILISEC);//assumes 80MHz clk
+/************************* Initialization *********************************/
+
+/**************************************************************************/
+/*!
+      Performs a SW-based reset of the RA8875
+*/
+/**************************************************************************/
+void softReset(void) {
+  writeCommand(RA8875_PWRR);
+  writeData(RA8875_PWRR_SOFTRESET);
+  writeData(RA8875_PWRR_NORMAL);
+  //delay(1);
+  SysCtlDelay(ONE_MILISEC);
 }
 
-void ra_initialize()
-{
+/**************************************************************************/
+/*!
+      Initialise the PLL
+*/
+/**************************************************************************/
+void PLLinit(void) {
+  //if (_size == RA8875_480x272) {
+    writeReg(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
+    //delay(1);
+    SysCtlDelay(ONE_MILISEC);
+    writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
+    //delay(1);
+    SysCtlDelay(ONE_MILISEC);
+  /*}
+  if (_size == RA8875_800x480) {
+    writeReg(RA8875_PLLC1, RA8875_PLLC1_PLLDIV1 + 10);
+    delay(1);
+    writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
+    delay(1);
+  }*/
+}
+
+/**************************************************************************/
+/*!
+      Initialises the driver IC (clock setup, etc.)
+*/
+/**************************************************************************/
+void initialize(void) {
+  PLLinit();
+  writeReg(RA8875_SYSR, RA8875_SYSR_16BPP | RA8875_SYSR_MCU8);
+
   /* Timing values */
   uint8_t pixclk;
   uint8_t hsync_start;
@@ -117,31 +229,46 @@ void ra_initialize()
   uint16_t vsync_nondisp;
   uint16_t vsync_start;
 
-  ra_PLLinit();
-  writeReg(RA8875_SYSR, RA8875_SYSR_16BPP | RA8875_SYSR_MCU8);
-
   /* Set the correct values for the display being used */
-  pixclk          = RA8875_PCSR_PDATL | RA8875_PCSR_4CLK;
-  hsync_nondisp   = 10;
-  hsync_start     = 8;
-  hsync_pw        = 48;
-  hsync_finetune  = 0;
-  vsync_nondisp   = 3;
-  vsync_start     = 8;
-  vsync_pw        = 10;
+  //if (_size == RA8875_480x272)
+  //{
+    pixclk          = RA8875_PCSR_PDATL | RA8875_PCSR_4CLK;
+    hsync_nondisp   = 10;
+    hsync_start     = 8;
+    hsync_pw        = 48;
+    hsync_finetune  = 0;
+    vsync_nondisp   = 3;
+    vsync_start     = 8;
+    vsync_pw        = 10;
+  /*}
+  else if (_size == RA8875_800x480)
+  {
+    pixclk          = RA8875_PCSR_PDATL | RA8875_PCSR_2CLK;
+    hsync_nondisp   = 26;
+    hsync_start     = 32;
+    hsync_pw        = 96;
+    hsync_finetune  = 0;
+    vsync_nondisp   = 32;
+    vsync_start     = 23;
+    vsync_pw        = 2;
+  }*/
 
   writeReg(RA8875_PCSR, pixclk);
-  SysCtlDelay(ONE_MILISEC);//assumes 80MHz clk
+  //delay(1);
+  SysCtlDelay(ONE_MILISEC);
 
   /* Horizontal settings registers */
-  writeReg(RA8875_HDWR, (ra8875.width / 8) - 1);                          // H width: (HDWR + 1) * 8 = 480
+  //writeReg(RA8875_HDWR, (_width / 8) - 1);                          // H width: (HDWR + 1) * 8 = 480
+  writeReg(RA8875_HDWR, (ra8875.width / 8) - 1);
   writeReg(RA8875_HNDFTR, RA8875_HNDFTR_DE_HIGH + hsync_finetune);
   writeReg(RA8875_HNDR, (hsync_nondisp - hsync_finetune - 2)/8);    // H non-display: HNDR * 8 + HNDFTR + 2 = 10
   writeReg(RA8875_HSTR, hsync_start/8 - 1);                         // Hsync start: (HSTR + 1)*8
   writeReg(RA8875_HPWR, RA8875_HPWR_LOW + (hsync_pw/8 - 1));        // HSync pulse width = (HPWR+1) * 8
 
   /* Vertical settings registers */
+  //writeReg(RA8875_VDHR0, (uint16_t)(_height - 1) & 0xFF);
   writeReg(RA8875_VDHR0, (uint16_t)(ra8875.height - 1) & 0xFF);
+  //writeReg(RA8875_VDHR1, (uint16_t)(_height - 1) >> 8);
   writeReg(RA8875_VDHR1, (uint16_t)(ra8875.height - 1) >> 8);
   writeReg(RA8875_VNDR0, vsync_nondisp-1);                          // V non-display period = VNDR + 1
   writeReg(RA8875_VNDR1, vsync_nondisp >> 8);
@@ -152,35 +279,53 @@ void ra_initialize()
   /* Set active window X */
   writeReg(RA8875_HSAW0, 0);                                        // horizontal start point
   writeReg(RA8875_HSAW1, 0);
-  writeReg(RA8875_HEAW0, (uint16_t)(ra8875.width - 1) & 0xFF);            // horizontal end point
+  //writeReg(RA8875_HEAW0, (uint16_t)(_width - 1) & 0xFF);            // horizontal end point
+  writeReg(RA8875_HEAW0, (uint16_t)(ra8875.width - 1) & 0xFF);
+  //writeReg(RA8875_HEAW1, (uint16_t)(_width - 1) >> 8);
   writeReg(RA8875_HEAW1, (uint16_t)(ra8875.width - 1) >> 8);
 
   /* Set active window Y */
   writeReg(RA8875_VSAW0, 0);                                        // vertical start point
   writeReg(RA8875_VSAW1, 0);
-  writeReg(RA8875_VEAW0, (uint16_t)(ra8875.height - 1) & 0xFF);           // horizontal end point
+  //writeReg(RA8875_VEAW0, (uint16_t)(_height - 1) & 0xFF);           // horizontal end point
+  writeReg(RA8875_VEAW0, (uint16_t)(ra8875.height - 1) & 0xFF);
+  //writeReg(RA8875_VEAW1, (uint16_t)(_height - 1) >> 8);
   writeReg(RA8875_VEAW1, (uint16_t)(ra8875.height - 1) >> 8);
 
-  //TODO: Setup touch panel?
+  /* ToDo: Setup touch panel? */
 
   /* Clear the entire window */
   writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);
-
-  //WAIT 500ms;
-  delay500();
+  //delay(500);
+  SysCtlDelay(FIVEHUNDRED_MILISEC);
 }
 
-void delay500()
-{
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
-}
+/**************************************************************************/
+/*!
+      Returns the display width in pixels
+
+      @returns  The 1-based display width in pixels
+*/
+/**************************************************************************/
+//uint16_t Adafruit_RA8875::width(void) { return _width; }
+
+/**************************************************************************/
+/*!
+      Returns the display height in pixels
+
+      @returns  The 1-based display height in pixels
+*/
+/**************************************************************************/
+//uint16_t Adafruit_RA8875::height(void) { return _height; }
+
+/************************* Text Mode ***********************************/
 
 /**************************************************************************/
 /*!
       Sets the display in text mode (as opposed to graphics mode)
 */
 /**************************************************************************/
-void textMode()
+void textMode(void)
 {
   /* Set text mode */
   writeCommand(RA8875_MWCR0);
@@ -251,6 +396,30 @@ void textColor(uint16_t foreColor, uint16_t bgColor)
 
 /**************************************************************************/
 /*!
+      Sets the fore color when rendering text with a transparent bg
+
+      @args foreColor[in] The RGB565 color to use when rendering the text
+*/
+/**************************************************************************/
+void textTransparent(uint16_t foreColor)
+{
+  /* Set Fore Color */
+  writeCommand(0x63);
+  writeData((foreColor & 0xf800) >> 11);
+  writeCommand(0x64);
+  writeData((foreColor & 0x07e0) >> 5);
+  writeCommand(0x65);
+  writeData((foreColor & 0x001f));
+
+  /* Set transparency flag */
+  writeCommand(0x22);
+  uint8_t temp = readData();
+  temp |= (1<<6); // Set bit 6
+  writeData(temp);
+}
+
+/**************************************************************************/
+/*!
       Sets the text enlarge settings, using one of the following values:
 
       0 = 1x zoom
@@ -286,24 +455,22 @@ void textEnlarge(uint8_t scale)
 /**************************************************************************/
 void textWrite(const char* buffer, uint16_t len)
 {
-	uint16_t i;
-	if (len == 0)
-		len = strlen(buffer);
+  //if (len == 0) len = strlen(buffer);
+	uint16_t i=0;
 	writeCommand(RA8875_MRWC);
-	for (i=0;i<len;i++)
+	//for (i=0;i<len;i++)
+	while(buffer[i]!='\0')
 	{
 		writeData(buffer[i]);
-    //TODO may need to add delay here
-
-
-/*#if defined(__AVR__)
+		i++;
+#if defined(__AVR__)
     if (_textScale > 1) delay(1);
 #elif defined(__arm__)
     // This delay is needed with textEnlarge(1) because
     // Teensy 3.X is much faster than Arduino Uno
     if (_textScale > 0) delay(1);
-#endif*/
-	}
+#endif
+  }
 }
 
 /************************* Graphics ***********************************/
@@ -327,14 +494,16 @@ void graphicsMode(void) {
 /**************************************************************************/
 bool waitPoll(uint8_t regname, uint8_t waitflag) {
   /* Wait for the command to finish */
-  while (1)
-  {
-    uint8_t temp = readReg(regname);
-    if (!(temp & waitflag))
-      return true;
-  }
-  return false; // MEMEFIX: yeah i know, unreached! - add timeout?
+	uint8_t temp;
+	while (1)
+	{
+		temp = readReg(regname);
+		if (!(temp & waitflag))
+			return true;
+	}
+	return false; // MEMEFIX: yeah i know, unreached! - add timeout?
 }
+
 
 /**************************************************************************/
 /*!
@@ -360,18 +529,20 @@ void setXY(uint16_t x, uint16_t y) {
 */
 /**************************************************************************/
 void pushPixels(uint32_t num, uint16_t p) {
+  //digitalWrite(_cs, LOW);
+//	digitalWrite(ra8875.base_cs, ra8875.cs, 0);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-
 	//SPI.transfer(RA8875_DATAWRITE);
-	SSIDataPut(ra8875.base_ssi, RA8875_DATAWRITE);
+	mySSIDataPut(ra8875.base_ssi,RA8875_DATAWRITE);
 	while (num--)
 	{
+		mySSIDataPut(ra8875.base_ssi,p>>8);
+		mySSIDataPut(ra8875.base_ssi,p);
 		//SPI.transfer(p >> 8);
 		//SPI.transfer(p);
-		SSIDataPut(ra8875.base_ssi, p>>8);
-		SSIDataPut(ra8875.base_ssi, p);
 	}
-
+	//digitalWrite(_cs, HIGH);
+//	digitalWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 }
 
@@ -380,11 +551,11 @@ void pushPixels(uint32_t num, uint16_t p) {
 
 */
 /**************************************************************************/
-void fillRect_void() {
+/*void fillRect(void) {
   writeCommand(RA8875_DCR);
   writeData(RA8875_DCR_LINESQUTRI_STOP | RA8875_DCR_DRAWSQUARE);
   writeData(RA8875_DCR_LINESQUTRI_START | RA8875_DCR_FILL | RA8875_DCR_DRAWSQUARE);
-}
+}*/
 
 /**************************************************************************/
 /*!
@@ -397,21 +568,21 @@ void fillRect_void() {
 /**************************************************************************/
 void drawPixel(int16_t x, int16_t y, uint16_t color)
 {
-	writeReg(RA8875_CURH0, x);
-	writeReg(RA8875_CURH1, x >> 8);
-	writeReg(RA8875_CURV0, y);
-	writeReg(RA8875_CURV1, y >> 8);
-	writeCommand(RA8875_MRWC);
-	//digitalWrite(_cs, LOW);
-	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-	//SPI.transfer(RA8875_DATAWRITE);
-	SSIDataPut(ra8875.base_ssi, RA8875_DATAWRITE);
-	//SPI.transfer(color >> 8);
-	SSIDataPut(ra8875.base_ssi, color>>8);
-	//SPI.transfer(color);
-	SSIDataPut(ra8875.base_ssi, color);
-	//digitalWrite(_cs, HIGH);
-	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
+  writeReg(RA8875_CURH0, x);
+  writeReg(RA8875_CURH1, x >> 8);
+  writeReg(RA8875_CURV0, y);
+  writeReg(RA8875_CURV1, y >> 8);
+  writeCommand(RA8875_MRWC);
+  //digitalWrite(_cs, LOW);
+  GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
+  /////SPI.transfer(RA8875_DATAWRITE);
+  mySSIDataPut(ra8875.base_ssi,RA8875_DATAWRITE);
+  mySSIDataPut(ra8875.base_ssi,color>>8);
+  mySSIDataPut(ra8875.base_ssi,color);
+  //SPI.transfer(color >> 8);
+  //SPI.transfer(color);
+  //digitalWrite(_cs, HIGH);
+  GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 }
 
 /**************************************************************************/
@@ -500,7 +671,7 @@ void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
 /**************************************************************************/
 void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-  rectHelper(x, y, x+w, y+h, color, 0);
+  rectHelper(x, y, x+w, y+h, color, false);
 }
 
 /**************************************************************************/
@@ -516,7 +687,7 @@ void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 /**************************************************************************/
 void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-  rectHelper(x, y, x+w, y+h, color, 1);
+  rectHelper(x, y, x+w, y+h, color, true);
 }
 
 /**************************************************************************/
@@ -528,7 +699,8 @@ void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 /**************************************************************************/
 void fillScreen(uint16_t color)
 {
-  rectHelper(0, 0, ra8875.width-1, ra8875.height-1, color, 1);
+  //rectHelper(0, 0, _width-1, _height-1, color, true);
+	rectHelper(0, 0, ra8875.width-1, ra8875.height-1, color, true);
 }
 
 /**************************************************************************/
@@ -543,7 +715,7 @@ void fillScreen(uint16_t color)
 /**************************************************************************/
 void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 {
-  circleHelper(x0, y0, r, color, 0);
+  circleHelper(x0, y0, r, color, false);
 }
 
 /**************************************************************************/
@@ -558,7 +730,7 @@ void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 /**************************************************************************/
 void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 {
-  circleHelper(x0, y0, r, color, 1);
+  circleHelper(x0, y0, r, color, true);
 }
 
 /**************************************************************************/
@@ -573,10 +745,10 @@ void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
       @args y2[in]    The 0-based y location of point 2 on the triangle
       @args color[in] The RGB565 color to use when drawing the pixel
 */
-/**************************************************************************/
+/**************enum RA8875sizes { RA8875_480x272, RA8875_800x480 };************************************************************/
 void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
 {
-  triangleHelper(x0, y0, x1, y1, x2, y2, color, 0);
+  triangleHelper(x0, y0, x1, y1, x2, y2, color, false);
 }
 
 /**************************************************************************/
@@ -594,7 +766,7 @@ void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, in
 /**************************************************************************/
 void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
 {
-  triangleHelper(x0, y0, x1, y1, x2, y2, color, 1);
+  triangleHelper(x0, y0, x1, y1, x2, y2, color, true);
 }
 
 /**************************************************************************/
@@ -610,7 +782,7 @@ void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, in
 /**************************************************************************/
 void drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color)
 {
-  ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, 0);
+  ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, false);
 }
 
 /**************************************************************************/
@@ -626,7 +798,7 @@ void drawEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t sho
 /**************************************************************************/
 void fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color)
 {
-  ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, 0);
+  ellipseHelper(xCenter, yCenter, longAxis, shortAxis, color, true);
 }
 
 /**************************************************************************/
@@ -638,16 +810,16 @@ void fillEllipse(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t sho
       @args longAxis[in]  The size in pixels of the ellipse's long axis
       @args shortAxis[in] The size in pixels of the ellipse's short axis
       @args curvePart[in] The corner to draw, where in clock-wise motion:
-                            0 = 180-270�
-                            1 = 270-0�
-                            2 = 0-90�
-                            3 = 90-180�
+                            0 = 180-270°
+                            1 = 270-0°
+                            2 = 0-90°
+                            3 = 90-180°
       @args color[in]     The RGB565 color to use when drawing the pixel
 */
 /**************************************************************************/
 void drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color)
 {
-  curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, 0);
+  curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, false);
 }
 
 /**************************************************************************/
@@ -659,16 +831,16 @@ void drawCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t short
       @args longAxis[in]  The size in pixels of the ellipse's long axis
       @args shortAxis[in] The size in pixels of the ellipse's short axis
       @args curvePart[in] The corner to draw, where in clock-wise motion:
-                            0 = 180-270�
-                            1 = 270-0�
-                            2 = 0-90�
-                            3 = 90-180�
+                            0 = 180-270°
+                            1 = 270-0°
+                            2 = 0-90°
+                            3 = 90-180°
       @args color[in]     The RGB565 color to use when drawing the pixel
 */
 /**************************************************************************/
 void fillCurve(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color)
 {
-  curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, 1);
+  curveHelper(xCenter, yCenter, longAxis, shortAxis, curvePart, color, true);
 }
 
 /**************************************************************************/
@@ -1029,7 +1201,8 @@ void touchEnable(bool on)
 /**************************************************************************/
 bool touched(void)
 {
-  if (readReg(RA8875_INTC2) & RA8875_INTC2_TP) return 1;
+  if (readReg(RA8875_INTC2) & RA8875_INTC2_TP)
+	  return true;
   return false;
 }
 
@@ -1044,7 +1217,7 @@ bool touched(void)
             the RA8875, resetting the flag used by the 'touched' function
 */
 /**************************************************************************/
-bool touchRead(uint16_t *x, uint16_t *y)
+bool touchRead(uint32_t *x, uint32_t *y)
 {
   uint16_t tx, ty;
   uint8_t temp;
@@ -1118,19 +1291,18 @@ uint8_t  readReg(uint8_t reg)
 
 /**************************************************************************/
 /*!
-GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
-SSIDataPut(ra8875.base_ssi, RA8875_DATAWRITE);
+
 */
 /**************************************************************************/
 void  writeData(uint8_t d)
 {
-	//digitalWrite(_cs, LOW);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-	//SPI.transfer(RA8875_DATAWRITE);
-	SSIDataPut(ra8875.base_ssi, RA8875_DATAWRITE);
-	//SPI.transfer(d);
-	SSIDataPut(ra8875.base_ssi, d);
-	//digitalWrite(_cs, HIGH);
+  //digitalWrite(_cs, LOW);
+  /////SPI.transfer(RA8875_DATAWRITE);
+	mySSIDataPut(ra8875.base_ssi,RA8875_DATAWRITE);
+	mySSIDataPut(ra8875.base_ssi,d);
+  //SPI.transfer(d);
+  //digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 }
 
@@ -1141,16 +1313,18 @@ void  writeData(uint8_t d)
 /**************************************************************************/
 uint8_t  readData(void)
 {
-	uint8_t x;
-	//digitalWrite(_cs, LOW);
+	uint32_t tmp;
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-	//SPI.transfer(RA8875_DATAREAD);
-	SSIDataPut(ra8875.base_ssi, RA8875_DATAREAD);
-	//x = SPI.transfer(0x0);
-	SSIDataGet(ra8875.base_ssi, (uint32_t *)&x);
-	//digitalWrite(_cs, HIGH);
+  //digitalWrite(_cs, LOW);
+  /////SPI.transfer(RA8875_DATAREAD);
+	mySSIDataPut(ra8875.base_ssi,RA8875_DATAREAD);
+	flushSSIFIFO(ra8875.base_ssi);
+  //uint8_t x = SPI.transfer(0x0);
+	mySSIDataPut(ra8875.base_ssi,0);
+	SSIDataGet(ra8875.base_ssi, &tmp);
+  //digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
-	return x;
+	return tmp;
 }
 
 /**************************************************************************/
@@ -1160,13 +1334,13 @@ uint8_t  readData(void)
 /**************************************************************************/
 void  writeCommand(uint8_t d)
 {
-	//digitalWrite(_cs, LOW);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-	//SPI.transfer(RA8875_CMDWRITE);
-	SSIDataPut(ra8875.base_ssi, RA8875_CMDWRITE);
-	//SPI.transfer(d);
-	SSIDataPut(ra8875.base_ssi, d);
-	//digitalWrite(_cs, HIGH);
+  //digitalWrite(_cs, LOW);
+  /////SPI.transfer(RA8875_CMDWRITE);
+	mySSIDataPut(ra8875.base_ssi,RA8875_CMDWRITE);
+	mySSIDataPut(ra8875.base_ssi,d);
+  //SPI.transfer(d);
+  //digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 }
 
@@ -1177,14 +1351,16 @@ void  writeCommand(uint8_t d)
 /**************************************************************************/
 uint8_t  readStatus(void)
 {
-	uint8_t x;
-	//digitalWrite(_cs, LOW);
+	uint32_t tmp;
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0);
-	//SPI.transfer(RA8875_CMDREAD);
-	SSIDataPut(ra8875.base_ssi, RA8875_CMDREAD);
-	//x = SPI.transfer(0x0);
-	SSIDataGet(ra8875.base_ssi, (uint32_t *)&x);
-	//digitalWrite(_cs, HIGH);
+  //digitalWrite(_cs, LOW);
+  /////SPI.transfer(RA8875_CMDREAD);
+	mySSIDataPut(ra8875.base_ssi,RA8875_CMDREAD);
+	flushSSIFIFO(ra8875.base_ssi);
+	mySSIDataPut(ra8875.base_ssi,0);
+	SSIDataGet(ra8875.base_ssi, &tmp);
+  //uint8_t x = SPI.transfer(0x0);
+  //digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
-	return x;
+  return tmp;
 }

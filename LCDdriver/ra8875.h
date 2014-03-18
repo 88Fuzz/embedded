@@ -1,20 +1,11 @@
 #ifndef RA8875_H_
 #define RA8875_H_
-
 #include <stdint.h>
 #include <stdbool.h>
+// Sizes!
 
-#define ONE_MILISEC 26670
-#define FIVEHUNDRED_MILISEC 13333340
 
-typedef struct
-{
-	uint32_t cs, rst;//SPI rst, cs pins gpio??
-	uint32_t base_cs, base_rst;
-	uint32_t base_ssi, ssi_clk, ssi_rx, ssi_tx;
-	uint16_t width, height;
-	uint8_t textScale;
-} LCDdisp;
+
 
 // Touch screen cal structs
 typedef struct Point
@@ -35,13 +26,19 @@ typedef struct //Matrix
 } tsMatrix_t;
 
 
-void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
+
+void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
+		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
+		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
+		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs, uint32_t SSICS_pin,
 		uint32_t cs_pin, uint32_t rst_pin, uint32_t base_ssi,
 		uint32_t SSICLK_pin, uint32_t SSIRX_pin, uint32_t SSITX_pin,
+		uint32_t base_int, uint32_t touch_int,
 		uint16_t width, uint16_t height);
 
-  void    delay500();
-  bool    ra_begin();
+//  Adafruit_RA8875(uint8_t cs, uint8_t rst);
+
+  bool begin();//enum RA8875sizes s);
   void    softReset(void);
   void    displayOn(bool on);
   void    sleep(bool sleep);
@@ -58,7 +55,7 @@ void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
   void    graphicsMode(void);
   void    setXY(uint16_t x, uint16_t y);
   void    pushPixels(uint32_t num, uint16_t p);
-  void    fillRect_void();
+//  void    fillRect(void);
 
   /* Adafruit_GFX functions */
   void    drawPixel(int16_t x, int16_t y, uint16_t color);
@@ -89,7 +86,7 @@ void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
   /* Touch screen */
   void    touchEnable(bool on);
   bool touched(void);
-  bool touchRead(uint16_t *x, uint16_t *y);
+  bool touchRead(uint32_t *x, uint32_t *y);
 
   /* Low level access */
   void    writeReg(uint8_t reg, uint8_t val);
@@ -103,15 +100,19 @@ void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
   uint16_t height(void);
 
   /* Play nice with Arduino's Print class */
- /* size_t write(uint8_t b);
-
+/*
+  virtual size_t write(uint8_t b) {
+    textWrite((const char *)&b, 1);
+    return 1;
+  }
   virtual size_t write(const uint8_t *buffer, size_t size) {
     textWrite((const char *)buffer, size);
     return size;
-  }*/
+  }
+*/
 
-  void ra_PLLinit(void);
-  void ra_initialize(void);
+  void PLLinit(void);
+  void initialize(void);
 
   /* GFX Helper Functions */
   void circleHelper(int16_t x0, int16_t y0, int16_t r, uint16_t color, bool filled);
@@ -120,21 +121,18 @@ void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
   void ellipseHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint16_t color, bool filled);
   void curveHelper(int16_t xCenter, int16_t yCenter, int16_t longAxis, int16_t shortAxis, uint8_t curvePart, uint16_t color, bool filled);
 
-//  uint8_t _cs, _rst;
-//  uint16_t _width, _height;
-//  uint8_t _textScale;
-  //enum RA8875sizes _size;
 
 
 // Colors (RGB565)
-#define RA8875_BLACK            0x0000
-#define RA8875_BLUE             0x001F
-#define RA8875_RED              0xF800
+#define	 RA8875_BLACK            0x0000
+#define	 RA8875_BLUE             0x001F
+#define	 RA8875_RED              0xF800
 #define RA8875_GREEN            0x07E0
 #define RA8875_CYAN             0x07FF
 #define RA8875_MAGENTA          0xF81F
 #define RA8875_YELLOW           0xFFE0
 #define RA8875_WHITE            0xFFFF
+#define ORANGE					 0xFC01
 
 // Command/Data pins for SPI
 #define RA8875_DATAWRITE        0x00
@@ -329,5 +327,6 @@ void initRA8875pins(uint32_t base_cs, uint32_t base_rst,
 #define RA8875_INTC2_DMA        0x08
 #define RA8875_INTC2_TP         0x04
 #define RA8875_INTC2_BTE        0x02
+
 
 #endif /* RA8875_H_ */
