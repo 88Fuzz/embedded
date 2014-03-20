@@ -690,6 +690,12 @@ void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
   rectHelper(x, y, x+w, y+h, color, true);
 }
 
+//draws a rectangle  with at point (5x,5y) and width 5w and height 5h
+void fillRect5(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+{
+  rectHelper(x*5, y*5, (x+w)*5, (y+h)*5, color, true);
+}
+
 /**************************************************************************/
 /*!
       Fills the screen with the spefied RGB565 color

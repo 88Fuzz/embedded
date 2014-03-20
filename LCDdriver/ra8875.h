@@ -67,6 +67,7 @@ void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
   void    drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
   void    drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
   void    fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+  void    fillRect5(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
   void    drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
   void    fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
   void    drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
@@ -124,15 +125,15 @@ void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
 
 
 // Colors (RGB565)
-#define	 RA8875_BLACK            0x0000
-#define	 RA8875_BLUE             0x001F
-#define	 RA8875_RED              0xF800
-#define RA8875_GREEN            0x07E0
-#define RA8875_CYAN             0x07FF
-#define RA8875_MAGENTA          0xF81F
-#define RA8875_YELLOW           0xFFE0
-#define RA8875_WHITE            0xFFFF
-#define ORANGE					 0xFC01
+#define	 BLACK_16BIT            0x0000
+#define	 BLUE_16BIT             0x001F
+#define	 RED_16BIT              0xF800
+#define GREEN_16BIT            0x07E0
+#define CYAN_16BIT             0x07FF
+#define MAGENTA_16BIT          0xF81F
+#define YELLOW_16BIT           0xFFE0
+#define WHITE_16BIT            0xFFFF
+#define ORANGE_16BIT           0xFC01
 
 // Command/Data pins for SPI
 #define RA8875_DATAWRITE        0x00

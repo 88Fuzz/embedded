@@ -19,7 +19,13 @@ int main()
 {
 	char string[15]="Hello World!";
 	uint32_t tx, ty, tmp;
-	uint16_t xScale, yScale, i;
+	uint16_t xScale, yScale;
+	slider sl1, sl2, sl3, sl4;
+
+	sl1=slider_get(10,20,"Test 1");
+	sl2=slider_get(120,20,"Test 2");
+	sl3=slider_get(230,20,"Test 3");
+	sl4=slider_get(340,20,"Test 4");
 	/*void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
 		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
 		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
@@ -68,7 +74,7 @@ int main()
 //	PWM1out(255);
 
 	// With hardware accelleration this is instant
-	fillScreen(RA8875_WHITE);
+	fillScreen(WHITE_16BIT);
 
 	// Play with PWM
 //	for (i=255; i!=0; i-=5 )
@@ -84,28 +90,59 @@ int main()
 //	}
 	PWM1out(0);
 
+	//LOGO
+	fillScreen(BLACK_16BIT);
+	//u
+	fillRect5(0,26,2,13,WHITE_16BIT);
+	fillRect5(0,37,0xf,2,WHITE_16BIT);
+	fillRect5(0xd,26,2,21,WHITE_16BIT);
+	//S
+	fillRect5(0x10,13,0xf,2,WHITE_16BIT);
+	fillRect5(0x10,13,2,13,WHITE_16BIT);
+	fillRect5(0x10,24,0xf,2,WHITE_16BIT);
+	fillRect5(0x1d,24,2,15,WHITE_16BIT);
+	fillRect5(0x10,37,0xf,2,WHITE_16BIT);
+	//y
+	fillRect5(0x20,26,2,13,WHITE_16BIT);
+	fillRect5(0x20,37,0xf,2,WHITE_16BIT);
+	fillRect5(0x2d,26,2,26,WHITE_16BIT);
+	fillRect5(0x20,50,0xf,2,WHITE_16BIT);
+	//n
+	fillRect5(0x30,24,2,15,WHITE_16BIT);
+	fillRect5(0x30,26,0xf,2,WHITE_16BIT);
+	fillRect5(0x3d,26,2,13,WHITE_16BIT);
+	//t
+	fillRect5(0x40,24,0xf,2,WHITE_16BIT);
+	fillRect5(0x46,13,2,26,WHITE_16BIT);
+	fillRect5(0x46,37,9,2,WHITE_16BIT);
+	//h
+	fillRect5(0x50,13,2,26,WHITE_16BIT);
+	fillRect5(0x50,24,0xf,2,WHITE_16BIT);
+	fillRect5(0x5d,24,2,15,WHITE_16BIT);
+
+
 	//text test
-	fillScreen(RA8875_BLACK);
+	fillScreen(BLACK_16BIT);
 
 	textMode();
 	textSetCursor(10,10);
 
-	textTransparent(RA8875_WHITE);
+	textTransparent(WHITE_16BIT);
 	textWrite(string,15);
-	textColor(RA8875_WHITE, RA8875_RED);
+	textColor(WHITE_16BIT, RED_16BIT);
 	textWrite(string,15);
-	textTransparent(RA8875_CYAN);
+	textTransparent(CYAN_16BIT);
 	textWrite(string,15);
-	textTransparent(RA8875_GREEN);
+	textTransparent(GREEN_16BIT);
 	textWrite(string,15);
-	textColor(RA8875_YELLOW, RA8875_CYAN);
+	textColor(YELLOW_16BIT, CYAN_16BIT);
 	textWrite(string,15);
-	textColor(RA8875_BLACK, RA8875_MAGENTA);
+	textColor(BLACK_16BIT, MAGENTA_16BIT);
 	textWrite(string,15);
 
 	//Change the cursor location and color
 	textSetCursor(100, 100);
-	textTransparent(RA8875_WHITE);
+	textTransparent(WHITE_16BIT);
 	//If necessary, enlarge the font
 	textEnlarge(1);
 	//and render some more text!
@@ -113,55 +150,56 @@ int main()
 	textSetCursor(100, 150);
 	textEnlarge(2);
 	textWrite(string,15);
+	textEnlarge(0);
 
 	graphicsMode();
 
-	fillScreen(RA8875_RED);
+	fillScreen(RED_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_YELLOW);
+	fillScreen(YELLOW_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_GREEN);
+	fillScreen(GREEN_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_CYAN);
+	fillScreen(CYAN_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_MAGENTA);
+	fillScreen(MAGENTA_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_BLACK);
+	fillScreen(BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillScreen(RA8875_MAGENTA);
+	fillScreen(MAGENTA_16BIT);
 	SysCtlDelay(TEN_MILISEC);
 
 	  // Try some GFX acceleration!
-	drawCircle(100, 100, 50, RA8875_BLACK);
+	drawCircle(100, 100, 50, BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillCircle(100, 100, 49, RA8875_GREEN);
+	fillCircle(100, 100, 49, GREEN_16BIT);
 	SysCtlDelay(TEN_MILISEC);
 
-	fillRect(11, 11, 398, 198, RA8875_BLUE);
+	fillRect(11, 11, 398, 198, BLUE_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawRect(10, 10, 400, 200, RA8875_GREEN);
+	drawRect(10, 10, 400, 200, GREEN_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawPixel(10,10,RA8875_BLACK);
+	drawPixel(10,10,BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawPixel(11,11,RA8875_BLACK);
+	drawPixel(11,11,BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawLine(10, 10, 200, 100, RA8875_RED);
+	drawLine(10, 10, 200, 100, RED_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawTriangle(200, 15, 250, 100, 150, 125, RA8875_BLACK);
+	drawTriangle(200, 15, 250, 100, 150, 125, BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillTriangle(200, 16, 249, 99, 151, 124, RA8875_YELLOW);
+	fillTriangle(200, 16, 249, 99, 151, 124, YELLOW_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	drawEllipse(300, 100, 100, 40, RA8875_BLACK);
+	drawEllipse(300, 100, 100, 40, BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillEllipse(300, 100, 98, 38, RA8875_GREEN);
+	fillEllipse(300, 100, 98, 38, GREEN_16BIT);
 	SysCtlDelay(TEN_MILISEC);
 	  // Argument 5 (curvePart) is a 2-bit value to control each corner (select 0, 1, 2, or 3)
-	drawCurve(50, 100, 80, 40, 2, RA8875_BLACK);
+	drawCurve(50, 100, 80, 40, 2, BLACK_16BIT);
 	SysCtlDelay(TEN_MILISEC);
-	fillCurve(50, 100, 78, 38, 2, RA8875_WHITE);
+	fillCurve(50, 100, 78, 38, 2, WHITE_16BIT);
 	SysCtlDelay(TEN_MILISEC);
 
-	fillScreen(ORANGE);
+	fillScreen(g_backgroundColor);
 	SysCtlDelay(TEN_MILISEC);
 
 	//pinMode(RA8875_INT, INPUT);
@@ -171,6 +209,10 @@ int main()
 	xScale=1024*10000/ra8875.width;
 	yScale=1024*10000/ra8875.height;
 
+	slider_draw(&sl1);
+	slider_draw(&sl2);
+	slider_draw(&sl3);
+	slider_draw(&sl4);
 	while(1)
 	{
 		// Wait around for touch events
@@ -178,46 +220,71 @@ int main()
 		{
 			if (touched())
 			{
-				for(i=50;i<100;i++)
-				drawPixel(i,50, RA8875_BLACK);
-
 				touchRead(&tx, &ty);
 				if(tx<X_TOUCH_MID)//roughly in the middle
 				{
 					tmp=tx*10000;
-					tmp*=50/X_TOUCH_MID/10000;
-					tx+=tmp-50;
+					tmp*=25;
+					tmp/=X_TOUCH_MID;
+					tmp/=10000;
+					tx+=tmp-25;
 				}
-
 				else
 				{
 					tmp=tx*10000;
-					tmp*=25/X_TOUCH_MAX/10000;
+					tmp*=12;
+					tmp/=X_TOUCH_MAX;
+					tmp/=10000;
 					tx+=tmp;
 				}
 
 				if(ty<Y_TOUCH_MID)//maybe do some kind of offset where the closer the point is to the edge, the greater the offset?
 				{
 					tmp=ty*10000;
-					tmp*=100/Y_TOUCH_MID/10000;
+					tmp*=100;
+					tmp/=Y_TOUCH_MID;
+					tmp/=10000;
 					ty+=tmp-100;
 				}
 				else
 				{
 					tmp=ty*10000;
-					tmp*=100/Y_TOUCH_MAX/10000;
+					tmp*=50;					//TODO: THIS LINE COULD BE ADJUSTED A BIT MORE
+					tmp/=Y_TOUCH_MAX;
+					tmp/=10000;
 					ty+=tmp;
-
 				}
-		//		tx-=50;
-		//		ty-=100;
 				tx*=10000;
 				ty*=10000;
 				tx/=xScale;
 				ty/=yScale;
-				// Draw a circle
-				fillCircle((uint16_t)(tx), (uint16_t)(ty), 4, RA8875_WHITE);
-			}
+
+				if(slider_isTouched(&sl1,tx,ty))
+				{
+					slider_updateSlideLevel(&sl1, ty);
+					slider_draw(&sl1);
+				}
+				else if(slider_isTouched(&sl2,tx,ty))
+				{
+					slider_updateSlideLevel(&sl2, ty);
+					slider_draw(&sl2);
+				}
+				else if(slider_isTouched(&sl3,tx,ty))
+				{
+					slider_updateSlideLevel(&sl3, ty);
+					slider_draw(&sl3);
+				}
+				else if(slider_isTouched(&sl4,tx,ty))
+				{
+					slider_updateSlideLevel(&sl4, ty);
+					slider_draw(&sl4);
+				}
+/*				else
+				{
+					//Draw a circle
+					fillCircle((uint16_t)(tx), (uint16_t)(ty), 4, WHITE_16BIT);
+				}
+*/			}
 		}
 	}
 
