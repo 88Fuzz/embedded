@@ -18,6 +18,7 @@
 #define SIZE_LOOKUP_TABLE 	1024
 #define SIZE_NOTE_ARRAY 	8
 #define VALUE_PI 			3.14159265
+#define VALUE_DIV_PI        0.31830988
 #define VALUE_SAMPLE_RATE 	44100
 
 #define NOTE_OFF 			0
@@ -32,6 +33,11 @@ typedef struct
 	float fPosition;		// wave table position
 	float fSample;			// output sample float
 }Note;
+
+typedef struct
+{
+    float fCutoff;
+}FilterParams;
 
 
 //*****************************************************************************
@@ -49,6 +55,6 @@ void NoteSet(Note* CurrentNote, float fFrequency);
 
 void SineInitialize();
 void SquareInitialize();
-//inline float SquareLookup(uint16_t index);
+void SawtoothInitialize();
 
 #endif /* DSP_H_ */

@@ -26,16 +26,14 @@
 #include "dac.h"
 #include "dsp.h"
 
-#define SAMPLE_PREPARE 	0
-#define SAMPLE_READY 	1
+#define SAMPLE_PREPARE 	0x80
+#define SAMPLE_READY 	0xC0
 
 //*****************************************************************************
 //
 // static global defines
 //
 //*****************************************************************************
-
-//static uint8_t pui8SPITxBuffer[4] = {0xFF, 0x00, 0xFF, 0x00};
 
 static uint32_t ui32OutSample = 0x00000000;
 static uint8_t* pui8SPITx;
@@ -53,8 +51,9 @@ void Timer0IntHandler(void)
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	pui8SPITx = (uint8_t*)&ui32OutSample;
 	pui8SPITx[2] |= DAC_MASK_WRITE;
-	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 0);
-
+	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 0);
+    GPIO_PORTA_DATA_R &= ~(0x08);
+    
 	// send sample out
 	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[2]);
 	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[1]);
@@ -64,14 +63,16 @@ void Timer0IntHandler(void)
 	{
 		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
 	}
-	else
+	/*
+    else
 	{
 		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);
 	}
-	
+	*/
 	while (SSIBusy(SSI0_BASE)) {}
-	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
-	ui8State = SAMPLE_PREPARE;
+	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
+	GPIO_PORTA_DATA_R |= 0x08;
+    ui8State = SAMPLE_PREPARE;
 }
 
 
@@ -146,21 +147,24 @@ void InitializeSystem()
 //
 //*****************************************************************************
 Note NoteArray[SIZE_NOTE_ARRAY];
+uint8_t ui8NoteCount;
+float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 1.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125};
 float fOutSample;
 int main(void)
 {
 	uint32_t n;
 	InitializeSystem();
-	SineInitialize();
-
+	SquareInitialize();
+    SawtoothInitialize();
+    
 	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
 		NoteInitialize(&NoteArray[n], 440.0 * n);
 	}
 
-	//NoteOn(&NoteArray[1]);
+	NoteOn(&NoteArray[1]);
 	//NoteOn(&NoteArray[2]);
-	NoteOn(&NoteArray[3]);
+	//NoteOn(&NoteArray[3]);
 	ui8State = SAMPLE_PREPARE;
 	// start the timer module with interrupt
 
@@ -170,15 +174,19 @@ int main(void)
 	{
 		// wait here until sample is output
 		while (ui8State == SAMPLE_READY) {}
-		fOutSample = 0;
-		for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+		ui8NoteCount = 0;
+        fOutSample = 0;
+        for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 		{
 			if (NoteArray[n].ui8State == NOTE_OFF) continue;
 			NotePlay(&NoteArray[n]);
+            ui8NoteCount++;
 			fOutSample += NoteArray[n].fSample;
 		}
-		ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);
-		ui32OutSample *= 64;
+		fOutSample *= pfNoteAmplitudeScale[ui8NoteCount];       // scale amplitude based on active notes to avoid clipping
+        fOutSample += 0.5;                                      // DC offset to allow sample to rest between 0 and 3V
+        ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   // convert to fixed point
+		ui32OutSample *= 64;                                    // "left shift" by 6, multiply is a single cycle 
 		ui8State = SAMPLE_READY;
 	}
 
