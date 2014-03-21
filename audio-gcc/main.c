@@ -154,8 +154,6 @@ int main(void)
 {
 	uint32_t n;
 	InitializeSystem();
-	SquareInitialize();
-    SawtoothInitialize();
     
 	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
