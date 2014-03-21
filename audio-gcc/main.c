@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 // c includes
-#include <math.h>
+//#include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
 // part include
@@ -157,7 +157,7 @@ int main(void)
     
 	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
-		NoteInitialize(&NoteArray[n], 440.0 * n);
+		NoteInitialize(&NoteArray[n], 440.0);
 	}
 
 	NoteOn(&NoteArray[1]);

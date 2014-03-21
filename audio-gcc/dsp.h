@@ -15,23 +15,24 @@
 // defines
 //
 //*****************************************************************************
-#define SIZE_LOOKUP_TABLE 	    1024
+//static float SIZE_LOOKUP_TABLE = 1024;
 #define SIZE_NOTE_ARRAY 	    8
-#define VALUE_DIV_LOOKUP_SIZE   1.0/1024
-#define VALUE_PI 			    3.14159265
-#define VALUE_TWO_PI            6.28318530
-#define VALUE_DIV_PI            0.31830988
-#define VALUE_SAMPLE_RATE 	    44100
-#define VALUE_DIV_SAMPLE_RATE   1.0/VALUE_SAMPLE_RATE 
-
-#define NOTE_OFF 			    0x00
-#define NOTE_ON				    0x01
+#define VALUE_SAMPLE_RATE 	44100
+/*
+static float VALUE_DIV_LOOKUP_SIZE =  1.0/SIZE_LOOKUP_TABLE;
+static float VALUE_PI =	3.14159265;
+static float VALUE_TWO_PI = 6.28318530;
+static float VALUE_DIV_PI = 0.31830988;
+static float VALUE_SAMPLE_RATE = 44100
+static float VALUE_DIV_SAMPLE_RATE = 1.0/VALUE_SAMPLE_RATE; 
+*/
+#define NOTE_OFF 		0x00
+#define NOTE_ON			0x01
 
 #define FILTER_LOW_PASS         0x01
 #define FILTER_HIGH_PASS        0x02;
 #define FILTER_BAND_PASS        0x03;
 #define FILTER_NOTCH_PASS       0x04;
-
 
 typedef struct
 {

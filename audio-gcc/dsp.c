@@ -1,11 +1,12 @@
 // c includes
-#include <math.h>
+//#include <math.h>
 #include <stdint.h>
-// driver library includes
-#include "driverlib/fpu.h"
 // custom includes
 #include "wavetable.h"
 #include "dsp.h"
+
+static float fSampleRateDiv = 1.0 / 44100;
+static float fSizeLookupTable = 1024.0;
 
 
 //*****************************************************************************
@@ -26,7 +27,7 @@ void NoteIncrement(Note* CurrentNote)
 	CurrentNote->fPosition += CurrentNote->fIncrement;
 
 	// check if the current position is greater than the lookup table size
-	if (CurrentNote->fPosition > SIZE_LOOKUP_TABLE)
+	if (CurrentNote->fPosition > fSizeLookupTable)
 	{
 		CurrentNote->fPosition = CurrentNote->fPosition - CurrentNote->fPosition;
 	}
@@ -36,7 +37,7 @@ void NoteInitialize(Note* CurrentNote, float fFrequency)
 {
 	CurrentNote->fFrequency = fFrequency;
 	// value to increment each time increment function is called
-	CurrentNote->fIncrement = SIZE_LOOKUP_TABLE * (fFrequency * VALUE_DIV_SAMPLE_RATE);
+	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
 	CurrentNote->fPosition = 0;
 	CurrentNote->fSample = 0;
 	CurrentNote->ui16Sample = 0;
@@ -49,9 +50,13 @@ void NoteInterpolate(Note* CurrentNote)
  */
 {
 	float fMax, fMin, fDiffMax, fDiffMin;
+	
 	// determine sample index above and below current position
-	fMax = ceilf(CurrentNote->fPosition);
-	fMin = floorf(CurrentNote->fPosition);
+	//fMax = ceilf(CurrentNote->fPosition);
+	//fMin = floorf(CurrentNote->fPosition);
+	fMax = (float) ((int) ((float)(CurrentNote->fPosition + 1.0)));
+	fMax = fMax > fSizeLookupTable ? 0 : fMax;
+	fMin = (float) ((int) CurrentNote->fPosition);
 
 	// figure out how much to weight each sample for interpolation
 	fDiffMin = fMax - CurrentNote->fPosition;
@@ -87,7 +92,7 @@ void NoteSet(Note* CurrentNote, float fFrequency)
  */
 {
 	CurrentNote->fFrequency = fFrequency;
-	CurrentNote->fIncrement = SIZE_LOOKUP_TABLE * (fFrequency * VALUE_DIV_SAMPLE_RATE);
+	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
 }
 
 
