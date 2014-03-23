@@ -5,8 +5,8 @@
 #include "wavetable.h"
 #include "dsp.h"
 
-static float fSampleRateDiv = 1.0 / 44100;
-static float fSizeLookupTable = 1024.0;
+static const float fSampleRateDiv = 1.0 / 44100;
+static const float fSizeLookupTable = 1024.0;
 
 
 //*****************************************************************************
@@ -103,7 +103,18 @@ void NoteSet(Note* CurrentNote, float fFrequency)
 //*****************************************************************************
 static FilterParameters FilterParams;
 
+/*
+ * sine approximation for filter calculation
+ * y = 1.256171924 * x + (-0.396285198) * x^2
+ * 
+ * 
+ * 
+ * 
+ */ 
+
+
 void FilterInitialize()
 {
     FilterParams.fOmega = 0.0;
+	FilterParams.fAlpha = 0.0;
 }

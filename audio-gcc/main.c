@@ -51,27 +51,27 @@ void Timer0IntHandler(void)
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	pui8SPITx = (uint8_t*)&ui32OutSample;
 	pui8SPITx[2] |= DAC_MASK_WRITE;
-	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 0);
+
+	// assert active low CS 
     GPIO_PORTA_DATA_R &= ~(0x08);
     
 	// send sample out
-	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[2]);
-	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[1]);
-	SSIDataPutNonBlocking(SSI0_BASE, pui8SPITx[0]);
+	// each byte is placed in the SSI FIFO, 24 bits total are transmitted
+	SSI0_DR_R = pui8SPITx[2];
+	SSI0_DR_R = pui8SPITx[1];
+	SSI0_DR_R = pui8SPITx[0];
 	
+	// if this triggers, CPU is taking too long to generate samples
 	if (ui8State == SAMPLE_PREPARE)
 	{
 		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
 	}
-	/*
-    else
-	{
-		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0);
-	}
-	*/
-	while (SSIBusy(SSI0_BASE)) {}
-	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
+
+	// wait to de-assert CS until all 24 bits have transmitted
+	while (SSI0_SR_R & SSI_SR_BSY) {}
 	GPIO_PORTA_DATA_R |= 0x08;
+    
+    // change state to generate next sample after returning from interrupt
     ui8State = SAMPLE_PREPARE;
 }
 
