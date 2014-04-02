@@ -5,16 +5,18 @@
 #include "wavetable.h"
 #include "dsp.h"
 
-static const float fSampleRateDiv = 1.0 / 44100;
+
+//*****************************************************************************
+//
+// global constants and variables
+//
+//*****************************************************************************
+static const float fSampleRate = VALUE_SAMPLE_RATE;
+static const float fSampleRateDiv = 1.0 / ((float) VALUE_SAMPLE_RATE);
 static const float fSizeLookupTable = 1024.0;
-
-
-//*****************************************************************************
-//
-// wave table function definitions
-//
-//*****************************************************************************
-float* pfWaveTable = pfSawtoothTable;
+static const float fPi = 3.14159265359;
+static const float fTwoPi = 2*3.14159265359;
+const float* pfWaveTable = pfSquareTable;
 
 
 //*****************************************************************************
@@ -103,18 +105,16 @@ void NoteSet(Note* CurrentNote, float fFrequency)
 //*****************************************************************************
 static FilterParameters FilterParams;
 
-/*
- * sine approximation for filter calculation
- * y = 1.256171924 * x + (-0.396285198) * x^2
- * 
- * 
- * 
- * 
- */ 
-
-
 void FilterInitialize()
 {
-    FilterParams.fOmega = 0.0;
-	FilterParams.fAlpha = 0.0;
+    // 2 * pi * fc / fs
+    FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
+	FilterParams.fDamping = 0.0;
+    FilterParams.fLow = 0.0;
+    FilterParams.fHigh = 0.0;
+    FilterParams.fBand = 0.0;
+    FilterParams.fNotch = 0.0;
+    FilterParams.fDelay[0] = 0;
+    FilterParams.fDelay[1] = 0;
 }
+

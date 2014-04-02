@@ -1,31 +1,69 @@
+from pylab import plot as py_plot
+from pylab import show as py_plot_show
 from math import sin, pi
+
 TableLength = 1024
 Table = [0] * TableLength
 
-def SquareWave():
+def SineWave():
     for n in range(0,TableLength):
         Table[n] = sin((2*pi*n)/TableLength)
-        Table[n] += 1.0/3.00 * sin((06.0*pi*n)/TableLength)
-        Table[n] += 1.0/5.00 * sin((10.0*pi*n)/TableLength)
-        Table[n] += 1.0/7.00 * sin((14.0*pi*n)/TableLength)
-        Table[n] += 1.0/9.00 * sin((18.0*pi*n)/TableLength)
-        Table[n] += 1.0/11.00 * sin((22.0*pi*n)/TableLength)
-        Table[n] *= 2.0/pi
     
-    print(Table)
+    py_plot(Table)
+    py_plot_show()
+    f = open("sine.txt", "w") 
+    f.write("= {")
+    for num in Table:
+        f.write(str(num) + ",\n")
+    
+    f.write("};")
+    #print(Table)
+    f.close()      
+    
+
+def SquareWave():
+    harmonics = 20
+    for n in range(0,TableLength):
+        Table[n] = sin((2*pi*n)/TableLength)
+        for k in range(3, 2*harmonics, 2):
+            Table[n] += 1.0/k * sin((2*k*pi*n)/TableLength)
+        Table[n] *= 3.3/pi
+    
+    py_plot(Table)
+    py_plot_show()
+    f = open("square.txt", "w")
+    
+    f.write("= {")
+    for num in Table:
+        f.write(str(num) + ",\n")
+    
+    f.write("};")
+    #print(Table)
+    f.close()   
+    
 
 def SawtoothWave():
+    harmonics = 20
     for n in range(0,TableLength):
         Table[n] = 0
-        Table[n] -= 1.000/pi*sin((2*pi*n)/TableLength)
-        Table[n] -= 0.500/pi*sin((4*pi*n)/TableLength)
-        Table[n] -= 0.333/pi*sin((6*pi*n)/TableLength)
-        Table[n] -= 0.250/pi*sin((8*pi*n)/TableLength)
-        Table[n] -= 0.200/pi*sin((10*pi*n)/TableLength)
-        Table[n] -= 0.166/pi*sin((12*pi*n)/TableLength)
-        Table[n] -= 0.142/pi*sin((14*pi*n)/TableLength)
-        Table[n] -= 0.125/pi*sin((16*pi*n)/TableLength)
-        Table[n] -= 0.111/pi*sin((18*pi*n)/TableLength)
-        Table[n] *= 0.9
-        
-    print(Table)
+        for k in range(1,harmonics):
+            Table[n] -= 1/(k*pi)*sin((2*k*pi*n)/TableLength)
+        Table[n] *= 1.7
+    
+    py_plot(Table)
+    py_plot_show()
+    f = open("sawtooth.txt", "w")
+    
+    f.write("= {")
+    for num in Table:
+        f.write(str(num) + ",\n")
+    
+    f.write("};")
+    #print(Table)
+    f.close()
+
+if __name__ == "__main__":
+    SineWave()
+    SquareWave()
+    SawtoothWave()
+    

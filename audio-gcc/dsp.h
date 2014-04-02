@@ -15,9 +15,8 @@
 // defines
 //
 //*****************************************************************************
-//static float SIZE_LOOKUP_TABLE = 1024;
 #define SIZE_NOTE_ARRAY 	    8
-#define VALUE_SAMPLE_RATE 	44100
+#define VALUE_SAMPLE_RATE 	48000
 /*
 static float VALUE_DIV_LOOKUP_SIZE =  1.0/SIZE_LOOKUP_TABLE;
 static float VALUE_PI =	3.14159265;
@@ -46,16 +45,13 @@ typedef struct
 
 typedef struct
 {
-    //float fCutoff;
+    float fCutoff;
     float fDamping;
     float fLow;
     float fHigh;
     float fBand;
     float fNotch;
-    float fCosFc;
-    float fSinFc;
-    float fAlpha;
-    float fOmega;
+    float fDelay[2];
     uint8_t ui8Type;
 }FilterParameters;
 

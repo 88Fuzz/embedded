@@ -26,6 +26,8 @@ LD      = ${PREFIX_ARM}-ld
 CP      = ${PREFIX_ARM}-objcopy
 # Program name definition for ARM GNU Object dump.
 OD      = ${PREFIX_ARM}-objdump
+# Program name definition for ARM GNU Debugger.
+DB		= ${PREFIX_ARM}-gdb
 
 # Optional arguments for C compiler.
 CFLAGS=-mthumb ${CPU} ${FPU} -O3 -ffunction-sections -fdata-sections -MD -std=c99 -Wall -pedantic -c -g
@@ -50,6 +52,14 @@ LIBM_PATH=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
 FLASHER=lm4flash
 # Flags for the uploader program.
 FLASHER_FLAGS=
+
+# Terminal
+TERMINAL=xfce4-terminal
+# On chip debugger 
+OC_DEBUGGER=openocd
+# Config file absolute path
+CONFIG_PATH=/usr/share/openocd/scripts/tiva.cfg 
+
 
 #==============================================================================
 #                         Project properties
@@ -100,4 +110,17 @@ clean:
 # Rule to load the project to the board (sudo may be needed if rule is note made).
 load:
 	${FLASHER} ${PROJECT_NAME}.bin ${FLASHER_FLAGS}
+
+# Make sure to run the following commands in GDB after connecting on chip debugger.
+#	target extended-remote :3333
+#	monitor reset halt
+#	load
+#	monitor reset init
+#
+# reference: http://kernelhacks.blogspot.com/2012/11/the-complete-tutorial-for-stellaris_23.html
+debug:
+	${TERMINAL} -x ${DB} ${PROJECT_NAME}.axf
+	${OC_DEBUGGER} -f ${CONFIG_PATH}
+
+
 

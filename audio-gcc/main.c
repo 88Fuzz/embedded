@@ -26,6 +26,9 @@
 #include "dac.h"
 #include "dsp.h"
 
+// remove comment to test toggling of debug LED
+#define DEBUG_BLINK_LED
+
 #define SAMPLE_PREPARE 	0x80
 #define SAMPLE_READY 	0xC0
 
@@ -47,6 +50,11 @@ static volatile uint8_t ui8State = 0;
 //*****************************************************************************
 void Timer0IntHandler(void)
 {
+#ifdef DEBUG_BLINK_LED
+	// LED will toggle on/off every second
+	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+	GPIO_PORTE_DATA_R ^= 0x01;
+#else	 
 	// clear the interrupt
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	pui8SPITx = (uint8_t*)&ui32OutSample;
@@ -73,6 +81,7 @@ void Timer0IntHandler(void)
     
     // change state to generate next sample after returning from interrupt
     ui8State = SAMPLE_PREPARE;
+#endif 
 }
 
 
@@ -90,10 +99,14 @@ void InitializeFPU()
 
 void InitializeGPIO()
 {
+#ifdef DEBUG_BLINK_LED
+	// PE0-PE3 used for debug
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);
+#else
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2 | GPIO_PIN_3);
-	// configured to act as CS for SPI communications
-	//GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
+#endif
 }
 
 
@@ -117,7 +130,13 @@ void InitializeTimer()
 	uint32_t ui32Period;
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+#ifdef DEBUG_BLINK_LED
+	// set interrupt to occur once every second
+	ui32Period = SysCtlClockGet();
+#else
+	// set interrupt to occur at the sample rate
 	ui32Period = SysCtlClockGet() / VALUE_SAMPLE_RATE;
+#endif
 	TimerLoadSet(TIMER0_BASE, TIMER_A, ui32Period-1);
 	IntEnable(INT_TIMER0A);
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
@@ -148,7 +167,7 @@ void InitializeSystem()
 //*****************************************************************************
 Note NoteArray[SIZE_NOTE_ARRAY];
 uint8_t ui8NoteCount;
-float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 1.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125};
+float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
 float fOutSample;
 int main(void)
 {
@@ -157,7 +176,7 @@ int main(void)
     
 	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
-		NoteInitialize(&NoteArray[n], 440.0);
+		NoteInitialize(&NoteArray[n], (float)n*440.0);
 	}
 
 	NoteOn(&NoteArray[1]);
