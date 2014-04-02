@@ -121,6 +121,3 @@ load:
 debug:
 	${TERMINAL} -x ${DB} ${PROJECT_NAME}.axf
 	${OC_DEBUGGER} -f ${CONFIG_PATH}
-
-
-

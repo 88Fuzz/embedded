@@ -74,7 +74,11 @@ void SquareInitialize();
 void SawtoothInitialize();
 
 void FilterInitialize();
-void FilterSet(float fCutoff, float fDamping);
-float FilterProcess(float fInput);
+void FilterSetCutoff(float fCutoff);
+void FilterSetDamping(float fDamping);
+void FilterProcess(float fInput);
+float FilterOutputLow();
+float FilterOutputHigh();
+float FilterOutputBand();
 
 #endif /* DSP_H_ */

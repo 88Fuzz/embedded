@@ -103,13 +103,16 @@ void NoteSet(Note* CurrentNote, float fFrequency)
 // Filter function definitions
 //
 //*****************************************************************************
+
+// reference: http://www.musicdsp.org/showone.php?id=142
+
 static FilterParameters FilterParams;
 
 void FilterInitialize()
 {
     // 2 * pi * fc / fs
     FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
-	FilterParams.fDamping = 0.0;
+	FilterParams.fDamping = 1.0;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
     FilterParams.fBand = 0.0;
@@ -118,3 +121,59 @@ void FilterInitialize()
     FilterParams.fDelay[1] = 0;
 }
 
+void FilterSetCutoff(float fCutoff)
+{
+	FilterParams.fCutoff = fTwoPi * fCutoff * fSampleRateDiv;
+}
+
+void FilterParamsDamping(float fDamping)
+{
+	FilterParams.fDamping = fDamping;
+}
+
+void FilterProcess(float fInput)
+{
+	// algorithm
+    // loop
+    // L = D2 + F1 * D1
+    // H = I - L - Q1*D1
+    // B = F1 * H + D1
+    // N = H + L
+    // store delays
+    // D1 = B
+    // D2 = L
+    // outputs
+    // L,H,B,N
+    
+    // low pass
+    FilterParams.fLow = FilterParams.fDelay[1];
+    FilterParams.fLow += FilterParams.fCutoff * FilterParams.fDelay[0];
+    // high pass
+    FilterParams.fHigh = fInput;
+    FilterParams.fHigh -= FilterParams.fLow;
+    FilterParams.fHigh -= FilterParams.fDamping * FilterParams.fDelay[0];
+    // band pass
+    FilterParams.fBand = FilterParams.fCutoff * FilterParams.fHigh;
+    FilterParams.fBand += FilterParams.fDelay[0];
+    // notch pass
+    // FilterParams.fNotch = FilterParams.fHigh + FilterParams.fLow;
+    
+    // store delays
+    FilterParams.fDelay[0] = FilterParams.fBand;
+    FilterParams.fDelay[1] = FilterParams.fLow;
+}
+
+float FilterOutputLow()
+{
+	return FilterParams.fLow;
+}
+
+float FilterOutputHigh()
+{
+	return FilterParams.fHigh;
+}
+
+float FilterOutputBand()
+{
+	return FilterParams.fBand;
+}
