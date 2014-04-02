@@ -119,5 +119,10 @@ load:
 #
 # reference: http://kernelhacks.blogspot.com/2012/11/the-complete-tutorial-for-stellaris_23.html
 debug:
+	@echo -e 'gdb commands:\n   target extended-remote :3333\n   monitor reset halt\n   load\n   monitor reset init\n'
 	${TERMINAL} -x ${DB} ${PROJECT_NAME}.axf
 	${OC_DEBUGGER} -f ${CONFIG_PATH}
+	
+test:
+	@echo -e 'gdb commands:\n   target extended-remote :3333\n   monitor reset halt\n   load\n   monitor reset init\n'
+

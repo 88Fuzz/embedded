@@ -16,7 +16,7 @@ static const float fSampleRateDiv = 1.0 / ((float) VALUE_SAMPLE_RATE);
 static const float fSizeLookupTable = 1024.0;
 static const float fPi = 3.14159265359;
 static const float fTwoPi = 2*3.14159265359;
-const float* pfWaveTable = pfSquareTable;
+const float* pfWaveTable = pfSawtoothTable;
 
 
 //*****************************************************************************

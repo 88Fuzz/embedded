@@ -27,7 +27,9 @@
 #include "dsp.h"
 
 // remove comment to test toggling of debug LED
-#define DEBUG_BLINK_LED
+// #define DEBUG_BLINK_LED
+// remove comment to test audio output of single note
+#define DEBUG_SINGLE_NOTE
 
 #define SAMPLE_PREPARE 	0x80
 #define SAMPLE_READY 	0xC0
@@ -61,23 +63,24 @@ void Timer0IntHandler(void)
 	pui8SPITx[2] |= DAC_MASK_WRITE;
 
 	// assert active low CS 
-    GPIO_PORTA_DATA_R &= ~(0x08);
+    GPIO_PORTD_DATA_R &= ~(0x02);
     
 	// send sample out
 	// each byte is placed in the SSI FIFO, 24 bits total are transmitted
-	SSI0_DR_R = pui8SPITx[2];
-	SSI0_DR_R = pui8SPITx[1];
-	SSI0_DR_R = pui8SPITx[0];
+	SSI3_DR_R = pui8SPITx[2];
+	SSI3_DR_R = pui8SPITx[1];
+	SSI3_DR_R = pui8SPITx[0];
 	
 	// if this triggers, CPU is taking too long to generate samples
+	/*
 	if (ui8State == SAMPLE_PREPARE)
 	{
 		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
 	}
-
+	*/
 	// wait to de-assert CS until all 24 bits have transmitted
-	while (SSI0_SR_R & SSI_SR_BSY) {}
-	GPIO_PORTA_DATA_R |= 0x08;
+	while (SSI3_SR_R & SSI_SR_BSY) {}
+	GPIO_PORTD_DATA_R |= 0x02;
     
     // change state to generate next sample after returning from interrupt
     ui8State = SAMPLE_PREPARE;
@@ -112,16 +115,16 @@ void InitializeGPIO()
 
 void InitializeSPI()
 {
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-	GPIOPinConfigure(GPIO_PA5_SSI0TX);
-	GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_3);
-	GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_2);
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_2,
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+	GPIOPinConfigure(GPIO_PD0_SSI3CLK);
+	GPIOPinConfigure(GPIO_PD3_SSI3TX);
+	GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, GPIO_PIN_1);
+	GPIOPinTypeSSI(GPIO_PORTD_BASE, GPIO_PIN_0 | GPIO_PIN_3);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_2,
 					   SSI_MODE_MASTER, SysCtlClockGet()/3, 8);
-	GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 8);
-	SSIEnable(SSI0_BASE);
+	GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_1, 2);
+	SSIEnable(SSI3_BASE);
 }
 
 
@@ -176,12 +179,12 @@ int main(void)
     
 	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 	{
-		NoteInitialize(&NoteArray[n], (float)n*440.0);
+		NoteInitialize(&NoteArray[n], 100.0);
 	}
-
+	
+#ifdef DEBUG_SINGLE_NOTE
 	NoteOn(&NoteArray[1]);
-	//NoteOn(&NoteArray[2]);
-	//NoteOn(&NoteArray[3]);
+#endif
 	ui8State = SAMPLE_PREPARE;
 	// start the timer module with interrupt
 
