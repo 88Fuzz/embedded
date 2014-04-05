@@ -17,14 +17,6 @@
 //*****************************************************************************
 #define SIZE_NOTE_ARRAY 	    8
 #define VALUE_SAMPLE_RATE 	48000
-/*
-static float VALUE_DIV_LOOKUP_SIZE =  1.0/SIZE_LOOKUP_TABLE;
-static float VALUE_PI =	3.14159265;
-static float VALUE_TWO_PI = 6.28318530;
-static float VALUE_DIV_PI = 0.31830988;
-static float VALUE_SAMPLE_RATE = 44100
-static float VALUE_DIV_SAMPLE_RATE = 1.0/VALUE_SAMPLE_RATE; 
-*/
 #define NOTE_OFF 		0x00
 #define NOTE_ON			0x01
 

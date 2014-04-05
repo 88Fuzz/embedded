@@ -26,10 +26,12 @@
 #include "dac.h"
 #include "dsp.h"
 
-// remove comment to test toggling of debug LED
+// test toggling of debug LED
 // #define DEBUG_BLINK_LED
-// remove comment to test audio output of single note
-#define DEBUG_SINGLE_NOTE
+// test audio output of single note
+//#define DBUG_SSI_OUTPUT
+// test ssi input command 
+#define DEBUG_SSI_INPUT
 
 #define SAMPLE_PREPARE 	0x80
 #define SAMPLE_READY 	0xC0
@@ -42,6 +44,7 @@
 
 static uint32_t ui32OutSample = 0x00000000;
 static uint8_t* pui8SPITx;
+static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
 
 
@@ -52,13 +55,18 @@ static volatile uint8_t ui8State = 0;
 //*****************************************************************************
 void Timer0IntHandler(void)
 {
+	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef DEBUG_BLINK_LED
 	// LED will toggle on/off every second
-	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	GPIO_PORTE_DATA_R ^= 0x01;
+#elseif DEBUG_SSI_INPUT
+	SSIGetDataNonBlocking(SSI0_BASE, &ui32SPIRx)
+	if (ui32SPIRx != 0)
+	{
+		GPIO_PORTE_DATA_R = 0x01;
+	}
 #else	 
 	// clear the interrupt
-	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	pui8SPITx = (uint8_t*)&ui32OutSample;
 	pui8SPITx[2] |= DAC_MASK_WRITE;
 
@@ -102,19 +110,28 @@ void InitializeFPU()
 
 void InitializeGPIO()
 {
-#ifdef DEBUG_BLINK_LED
 	// PE0-PE3 used for debug
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
 	GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);
-#else
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2 | GPIO_PIN_3);
-#endif
 }
 
 
 void InitializeSPI()
 {
+	// input SSI
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+    GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+    GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+    GPIOPinConfigure(GPIO_PA4_SSI0RX);
+    GPIOPinConfigure(GPIO_PA5_SSI0TX);
+    GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_3 |
+                   GPIO_PIN_2);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+	SSI_MODE_SLAVE, SysCtlClockGet()/3, 16);
+	SSIEnable(SSI0_BASE);
+		
+	// output SSI
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 	GPIOPinConfigure(GPIO_PD0_SSI3CLK);
@@ -125,6 +142,10 @@ void InitializeSPI()
 					   SSI_MODE_MASTER, SysCtlClockGet()/3, 8);
 	GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_1, 2);
 	SSIEnable(SSI3_BASE);
+	
+	// clear input rx fifo
+	while (SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx) != 0) {}
+	
 }
 
 
@@ -182,7 +203,7 @@ int main(void)
 		NoteInitialize(&NoteArray[n], 100.0);
 	}
 	
-#ifdef DEBUG_SINGLE_NOTE
+#ifdef DBUG_SSI_OUTPUT
 	NoteOn(&NoteArray[1]);
 #endif
 	ui8State = SAMPLE_PREPARE;
