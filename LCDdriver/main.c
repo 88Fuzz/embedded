@@ -3,37 +3,142 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "inc/tm4c123gh6pm.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/timer.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_ssi.h"
 #include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
 #include "driverlib/ssi.h"
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/udma.h"
-#include "myFuncs.h"
+#include "driverlib/uart.h"
+#include "util.h"
+#include "lcd.h"
 #include "ra8875.h"
 
+
+//#define MIDITEST
+#define LEDBLINK
+//#define SSI1_PF
 
 int main()
 {
 	char string[15]="Hello World!";
-	uint32_t tx, ty, tmp;
+	uint32_t tx, ty, tmp, tmpA, tmpB;
 	uint16_t xScale, yScale;
-	slider sl1, sl2, sl3, sl4;
+	slider sl1, sl2;//, sl3, sl4;
+	xyGrid xy;
 
-	sl1=slider_get(10,20,"Test 1");
-	sl2=slider_get(120,20,"Test 2");
-	sl3=slider_get(230,20,"Test 3");
-	sl4=slider_get(340,20,"Test 4");
-	/*void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
-		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
-		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
-		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs, uint32_t SSICS_pin,
-		uint32_t cs_pin, uint32_t rst_pin, uint32_t base_ssi,
-		uint32_t SSICLK_pin, uint32_t SSIRX_pin, uint32_t SSITX_pin,
-		uint32_t base_int, uint32_t touch_int,
-		uint16_t width, uint16_t height)*/
+	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+
+#ifdef MIDITEST
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+
+    GPIOPinConfigure(GPIO_PB0_U1RX);
+    GPIOPinConfigure(GPIO_PB1_U1TX);
+    GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), 31250,
+        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+
+
+    while (1)
+    {
+    	UARTCharPut(UART1_BASE, 0x90);
+    	UARTCharPut(UART1_BASE, 0x69);
+    	UARTCharPut(UART1_BASE, 0x7F);
+    }
+
+
+
+#elif defined LEDBLINK
+						/*CODE FOR 1Hz blinking LED*/
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+
+	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+
+	//tmp=SysCtlClockGet();
+	//ui32Period=SysCtlClockGet()/160;
+
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/2-1);
+
+	IntEnable(INT_TIMER0A);
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	IntMasterEnable();
+
+	TimerEnable(TIMER0_BASE, TIMER_A);
+
+	while(1);
+
+
+#elif defined SSI1_PF
+
+				/*CODE TO GET SSI1 WORKING*/
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1/*SYSCTL_PERIPH_SSI0*/);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF/*SYSCTL_PERIPH_GPIOA*/);
+
+	HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY;
+	HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;
+	HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;
+
+
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2);
+	GPIOPinConfigure(GPIO_PF1_SSI1TX/*GPIO_PA5_SSI0TX*/);
+	GPIOPinConfigure(GPIO_PF2_SSI1CLK/*GPIO_PA2_SSI0CLK*/);
+	GPIOPinConfigure(GPIO_PF3_SSI1FSS/*GPIO_PA3_SSI0FSS*/);
+	GPIOPinConfigure(GPIO_PF0_SSI1RX/*GPIO_PA4_SSI0RX*/);
+	GPIOPinTypeSSI(GPIO_PORTF_BASE,GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0
+			/*GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4*/);
+	SSIConfigSetExpClk(SSI1_BASE/*SSI0_BASE*/, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000, 8);
+	SSIEnable(SSI1_BASE/*SSI0_BASE*/);
+
+//		SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3/*SYSCTL_PERIPH_SSI0*/);
+//		SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD/*SYSCTL_PERIPH_GPIOA*/);
+//		GPIOPinConfigure(GPIO_PD3_SSI3TX/*GPIO_PA5_SSI0TX*/);
+//		GPIOPinConfigure(GPIO_PD0_SSI3CLK/*GPIO_PA2_SSI0CLK*/);
+//		GPIOPinConfigure(GPIO_PD1_SSI3FSS/*GPIO_PA3_SSI0FSS*/);
+//		GPIOPinConfigure(GPIO_PD2_SSI3RX/*GPIO_PA4_SSI0RX*/);
+//		GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0/*
+//				GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4*/);
+//		SSIConfigSetExpClk(SSI3_BASE/*SSI0_BASE*/, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000, 8);
+//		SSIEnable(SSI3_BASE/*SSI0_BASE*/);
+
+
+	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0xFF);
+
+	while(1)
+	{
+		flushSSIFIFO(SSI1_BASE/*SSI0_BASE*/);
+		mySSIDataPut(SSI1_BASE/*SSI0_BASE*/,0xAA);//load data
+		SSIDataGet(SSI1_BASE/*SSI0_BASE*/,&tmpA);
+//				flushSSIFIFO(SSI3_BASE/*SSI0_BASE*/);
+//				mySSIDataPut(SSI3_BASE/*SSI0_BASE*/,0xAA);//load data
+//				SSIDataGet(SSI3_BASE/*SSI0_BASE*/,&tmpB);
+		if(tmpA==0)
+			GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0);
+		else
+			GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0xFF);
+	}
+
+#else
+					/*CODE FOR TOUCH SCREEN*/
+
+	sl1=slider_get(10,35,"Test 1");
+	sl2=slider_get(120,35,"Test 2");
+	xy=xyGrid_get(230,35, "x val", "y val");
+	txtScale=text_get(50,0,"Scale: C#", 50,15,WHITE_16BIT,g_backgroundColor);
+	txtScaleType=text_get(150,0,"Type: minor", 50,15,WHITE_16BIT,g_backgroundColor);
+
+	//sl3=slider_get(230,20,"Test 3");
+	//sl4=slider_get(340,20,"Test 4");
 
 	ra8875init(
 			/*GPIOcfg*/SYSCTL_PERIPH_GPIOA,
@@ -71,24 +176,11 @@ int main()
 	GPIOX(true);      // Enable TFT - display enable tied to GPIOX
 //	this line breaks things bad
 	PWM1config(true, RA8875_PWM_CLK_DIV1024); // PWM output for backlight   //MAYBE THIS BREAKS SHIT
-//	PWM1out(255);
+	SysCtlDelay(TEN_MILISEC);
+	PWM1out(255);
 
 	// With hardware accelleration this is instant
 	fillScreen(WHITE_16BIT);
-
-	// Play with PWM
-//	for (i=255; i!=0; i-=5 )
-//	{
-//		PWM1out(i);
-//		SysCtlDelay(TEN_MILISEC);
-//	}
-
-//	for (i=0; i!=255; i+=5 )
-//	{
-//	    PWM1out(i);
-//	    SysCtlDelay(TEN_MILISEC);
-//	}
-	PWM1out(0);
 
 	//LOGO
 	fillScreen(BLACK_16BIT);
@@ -128,17 +220,17 @@ int main()
 	textSetCursor(10,10);
 
 	textTransparent(WHITE_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 	textColor(WHITE_16BIT, RED_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 	textTransparent(CYAN_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 	textTransparent(GREEN_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 	textColor(YELLOW_16BIT, CYAN_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 	textColor(BLACK_16BIT, MAGENTA_16BIT);
-	textWrite(string,15);
+	textWrite(string);
 
 	//Change the cursor location and color
 	textSetCursor(100, 100);
@@ -146,10 +238,10 @@ int main()
 	//If necessary, enlarge the font
 	textEnlarge(1);
 	//and render some more text!
-	textWrite(string,15);
+	textWrite(string);
 	textSetCursor(100, 150);
 	textEnlarge(2);
-	textWrite(string,15);
+	textWrite(string);
 	textEnlarge(0);
 
 	graphicsMode();
@@ -209,10 +301,13 @@ int main()
 	xScale=1024*10000/ra8875.width;
 	yScale=1024*10000/ra8875.height;
 
+	text_draw(&txtScale);
+	text_draw(&txtScaleType);
 	slider_draw(&sl1);
 	slider_draw(&sl2);
-	slider_draw(&sl3);
-	slider_draw(&sl4);
+	xyGrid_draw(&xy);
+	//slider_draw(&sl3);
+	//slider_draw(&sl4);
 	while(1)
 	{
 		// Wait around for touch events
@@ -269,7 +364,12 @@ int main()
 					slider_updateSlideLevel(&sl2, ty);
 					slider_draw(&sl2);
 				}
-				else if(slider_isTouched(&sl3,tx,ty))
+				else if(xyGrid_isTouched(&xy,tx,ty))
+				{
+					xyGrid_updateDotLevels(&xy,tx,ty);
+					xyGrid_draw(&xy);
+				}
+				/*else if(slider_isTouched(&sl3,tx,ty))
 				{
 					slider_updateSlideLevel(&sl3, ty);
 					slider_draw(&sl3);
@@ -278,7 +378,7 @@ int main()
 				{
 					slider_updateSlideLevel(&sl4, ty);
 					slider_draw(&sl4);
-				}
+				}*/
 /*				else
 				{
 					//Draw a circle
@@ -287,10 +387,19 @@ int main()
 */			}
 		}
 	}
-
+#endif
 	return 0;
 }
 
+void Timer0IntHandler()
+{
+	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4))
+		GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
+	else
+	    GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0xFF);
+}
 
 /*
 //8 push button SSI code

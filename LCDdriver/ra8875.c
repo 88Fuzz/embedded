@@ -36,7 +36,8 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-#include "myFuncs.h"
+#include "util.h"
+#include "lcd.h"
 
 
 
@@ -117,12 +118,6 @@ bool begin()
 	//delay(100);
 	SysCtlDelay(ONE_MILISEC);
 
-	//SPI.begin();
-	//#ifdef __AVR__
-	//SPI.setClockDivider(SPI_CLOCK_DIV128);
-	//SPI.setDataMode(SPI_MODE0);
-	//#endif
-
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
@@ -157,10 +152,6 @@ bool begin()
 	}
 
 	initialize();
-
-	//#ifdef __AVR__
-	//SPI.setClockDivider(SPI_CLOCK_DIV4);
-	//#endif
 
 	SSIDisable(SSI0_BASE);
 	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);
@@ -453,7 +444,7 @@ void textEnlarge(uint8_t scale)
       @args len[in]       The size of the buffer in bytes
 */
 /**************************************************************************/
-void textWrite(const char* buffer, uint16_t len)
+void textWrite(const char* buffer)
 {
   //if (len == 0) len = strlen(buffer);
 	uint16_t i=0;
@@ -463,13 +454,6 @@ void textWrite(const char* buffer, uint16_t len)
 	{
 		writeData(buffer[i]);
 		i++;
-#if defined(__AVR__)
-    if (_textScale > 1) delay(1);
-#elif defined(__arm__)
-    // This delay is needed with textEnlarge(1) because
-    // Teensy 3.X is much faster than Arduino Uno
-    if (_textScale > 0) delay(1);
-#endif
   }
 }
 
@@ -479,7 +463,7 @@ void textWrite(const char* buffer, uint16_t len)
 /*!
       Sets the display in graphics mode (as opposed to text mode)
 */
-/**************************************************************************/
+/********************************f******************************************/
 void graphicsMode(void) {
   writeCommand(RA8875_MWCR0);
   uint8_t temp = readData();

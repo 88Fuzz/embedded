@@ -12,6 +12,7 @@ extern text txtScaleType;
 extern LCDscreen ra8875;
 extern uint16_t g_backgroundColor;
 
+void Timer0IntHandler();
 
 void flushSSIFIFO(uint32_t);
 void mySSIDataPut(uint32_t , uint32_t);

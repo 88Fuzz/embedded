@@ -49,7 +49,7 @@ void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
   void    textColor(uint16_t foreColor, uint16_t bgColor);
   void    textTransparent(uint16_t foreColor);
   void    textEnlarge(uint8_t scale);
-  void    textWrite(const char* buffer, uint16_t len);
+  void    textWrite(const char* buffer);
 
   /* Graphics functions */
   void    graphicsMode(void);
