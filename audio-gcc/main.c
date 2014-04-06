@@ -27,11 +27,11 @@
 #include "dsp.h"
 
 // test toggling of debug LED
-// #define DEBUG_BLINK_LED
+#define DEBUG_BLINK_LED
 // test audio output of single note
 //#define DBUG_SSI_OUTPUT
 // test ssi input command 
-#define DEBUG_SSI_INPUT
+//#define DEBUG_SSI_INPUT
 
 #define SAMPLE_PREPARE 	0x80
 #define SAMPLE_READY 	0xC0
@@ -43,7 +43,7 @@
 //*****************************************************************************
 
 static uint32_t ui32OutSample = 0x00000000;
-static uint8_t* pui8SPITx;
+//static uint8_t* pui8SPITx;
 static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
 
@@ -59,7 +59,7 @@ void Timer0IntHandler(void)
 #ifdef DEBUG_BLINK_LED
 	// LED will toggle on/off every second
 	GPIO_PORTE_DATA_R ^= 0x01;
-#elseif DEBUG_SSI_INPUT
+#elif defined DEBUG_SSI_INPUT
 	SSIGetDataNonBlocking(SSI0_BASE, &ui32SPIRx)
 	if (ui32SPIRx != 0)
 	{
