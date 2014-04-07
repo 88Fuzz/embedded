@@ -7,7 +7,6 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/udma.h"
 #include "ra8875.h"
 #include "util.h"
 #include "lcd.h"

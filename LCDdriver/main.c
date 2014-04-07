@@ -21,8 +21,9 @@
 #include "ra8875.h"
 
 
-//#define MIDITEST
-#define LEDBLINK
+//#define SSI0_PCB_TEST
+#define MIDITEST
+//#define LEDBLINK
 //#define SSI1_PF
 
 int main()
@@ -35,7 +36,35 @@ int main()
 
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-#ifdef MIDITEST
+#ifdef SSI0_PCB_TEST
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+	GPIOPinConfigure(GPIO_PA5_SSI0TX);
+	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+	GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+	GPIOPinConfigure(GPIO_PA4_SSI0RX);
+	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+			SSI_MODE_MASTER, SysCtlClockGet()/3, 16);
+	SSIEnable(SSI0_BASE);
+
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+
+	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+
+	//tmp=SysCtlClockGet();
+	//ui32Period=SysCtlClockGet()/160;
+
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/48000-1);
+
+	IntEnable(INT_TIMER0A);
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	IntMasterEnable();
+
+	TimerEnable(TIMER0_BASE, TIMER_A);
+
+#elif defined MIDITEST
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 
@@ -49,9 +78,21 @@ int main()
 
     while (1)
     {
+//    	UARTCharPut(UART1_BASE,0xAA);
+  //  	SysCtlDelay(ONEHUNDRED_MILISEC);
     	UARTCharPut(UART1_BASE, 0x90);
     	UARTCharPut(UART1_BASE, 0x69);
     	UARTCharPut(UART1_BASE, 0x7F);
+
+    	SysCtlDelay(FIVEHUNDRED_MILISEC);
+    	SysCtlDelay(FIVEHUNDRED_MILISEC);
+
+    	UARTCharPut(UART1_BASE, 0x80);
+    	UARTCharPut(UART1_BASE, 0x69);
+    	UARTCharPut(UART1_BASE, 0x7F);
+
+    	SysCtlDelay(FIVEHUNDRED_MILISEC);
+    	SysCtlDelay(FIVEHUNDRED_MILISEC);
     }
 
 
@@ -59,21 +100,27 @@ int main()
 #elif defined LEDBLINK
 						/*CODE FOR 1Hz blinking LED*/
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4|GPIO_PIN_5);
+//	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
 
-	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+//	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+	TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC);
 
 	//tmp=SysCtlClockGet();
 	//ui32Period=SysCtlClockGet()/160;
 
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/2-1);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()-1);
+	TimerLoadSet(TIMER1_BASE, TIMER_A, SysCtlClockGet()/2-1);
 
 	IntEnable(INT_TIMER0A);
+	IntEnable(INT_TIMER1A);
 	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	TimerIntEnable(TIMER1_BASE,TIMER_TIMA_TIMEOUT);
 	IntMasterEnable();
 
 	TimerEnable(TIMER0_BASE, TIMER_A);
+	TimerEnable(TIMER1_BASE, TIMER_A);
 
 	while(1);
 
@@ -394,11 +441,23 @@ int main()
 void Timer0IntHandler()
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-
+#ifdef SSI0_PCB_TEST
+	SSIDataPut(SSI0_BASE, 0xAAAA);
+#else
 	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4))
 		GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
 	else
 	    GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0xFF);
+#endif
+}
+
+void Timer1IntHandler()
+{
+	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_5))
+		GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0);
+	else
+	    GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0xFF);
 }
 
 /*
