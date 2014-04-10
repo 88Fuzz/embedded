@@ -11,6 +11,11 @@
 // global constants and variables
 //
 //*****************************************************************************
+static Note NoteArray[SIZE_NOTE_ARRAY];
+static uint8_t ui8NoteCount;
+const static float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
+
+static FilterParameters FilterParams;
 static const float fSampleRate = VALUE_SAMPLE_RATE;
 static const float fSampleRateDiv = 1.0 / ((float) VALUE_SAMPLE_RATE);
 static const float fSizeLookupTable = 1024.0;
@@ -35,9 +40,9 @@ void NoteIncrement(Note* CurrentNote)
 	}
 }
 
-void NoteInitialize(Note* CurrentNote, float fFrequency)
+void NoteInitialize(Note* CurrentNote)
 {
-	CurrentNote->fFrequency = fFrequency;
+	CurrentNote->fFrequency = 0;
 	// value to increment each time increment function is called
 	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
 	CurrentNote->fPosition = 0;
@@ -69,9 +74,11 @@ void NoteInterpolate(Note* CurrentNote)
 	CurrentNote->fSample += pfWaveTable[(int) fMin] * fDiffMin;
 }
 
-void NoteOn(Note* CurrentNote)
+void NoteOn(Note* CurrentNote, float fFrequency)
 {
 	CurrentNote->ui8State = NOTE_ON;
+	CurrentNote->fFrequency = fFrequency;
+	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
 }
 
 void NoteOff(Note* CurrentNote)
@@ -100,19 +107,47 @@ void NoteSet(Note* CurrentNote, float fFrequency)
 
 //*****************************************************************************
 //
+// NoteArray function definitions
+//
+//*****************************************************************************
+
+void InitializeNoteArray()
+{
+    for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+    {
+	NoteInitialize(&NoteArray[n]);
+    }
+}
+
+
+float NoteArrayProcess()
+{
+    float fOutSample;
+    
+    for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+    {
+	if (NoteArray[n].ui8State == NOTE_OFF) continue;
+	NotePlay(&NoteArray[n]);
+	ui8NoteCount++;
+	fOutSample += NoteArray[n].fSample;
+    }
+    
+    return fOutSample;
+}
+
+
+//*****************************************************************************
+//
 // Filter function definitions
 //
 //*****************************************************************************
 
 // reference: http://www.musicdsp.org/showone.php?id=142
-
-static FilterParameters FilterParams;
-
 void FilterInitialize()
 {
     // 2 * pi * fc / fs
     FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
-	FilterParams.fDamping = 1.0;
+    FilterParams.fDamping = 1.0;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
     FilterParams.fBand = 0.0;
@@ -133,7 +168,7 @@ void FilterParamsDamping(float fDamping)
 
 void FilterProcess(float fInput)
 {
-	// algorithm
+    // algorithm
     // loop
     // L = D2 + F1 * D1
     // H = I - L - Q1*D1

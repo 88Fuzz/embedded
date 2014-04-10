@@ -1,4 +1,4 @@
-*****************************************************************************
+/****************************************************************************
 *****************************************************************************
 ****************************AUDIO COMMANDS***********************************
 *****************************************************************************
@@ -31,15 +31,15 @@ Command Number          Command Type            Data Range
 
 6                       Filter Cutoff Course    0-4095
 
-7                       Filter Q Factor         0-4095
+7                       Filter Cutoff Fine      0-4095
 
-8                       Filter Type             0-2 (0: low, 1: high, 2: band)
+8                       Filter Q Factor         0-4095
 
-9                       Waveform Type           0-2 (0: sine, 1. saw, 2: square)
+9                       Filter Type             0-2 (0: low, 1: high, 2: band)
 
-10                      Output Volume           0-4095
+10                      Waveform Type           0-2 (0: sine, 1. saw, 2: square)
 
-11
+11                      Output Volume           0-4095
 
 12
 
@@ -48,3 +48,30 @@ Command Number          Command Type            Data Range
 14
 
 15
+
+*****************************************************************************
+*****************************************************************************  
+*****************************************************************************
+*****************************************************************************
+****************************************************************************/
+
+
+#ifndef CMD_H_
+#define CMD_H_
+
+#define CMD_MASK                0xF000
+
+#define CMD_NOTE_ON             0x0000
+#define CMD_NOTE_OFF            0x1000
+#define CMD_NOTE_ALL_OFF        0x2000
+#define CMD_SET_ATTACK          0x3000
+#define CMD_SET_HOLD            0x4000
+#define CMD_SET_RELEASE         0x5000
+#define CMD_SET_CUTOFF_COURSE   0x6000
+#define CMD_SET_CUTOFF_FINE     0x7000
+#define CMD_SET_Q               0x8000
+#define CMD_SET_FILTER_TYPE     0x9000
+#define CMD_SET_WAVEFORM_TYPE   0xA000
+#define CMD_SET_VOLUME          0xB000
+
+#endif

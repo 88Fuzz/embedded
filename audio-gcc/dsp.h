@@ -47,7 +47,6 @@ typedef struct
     uint8_t ui8Type;
 }FilterParameters;
 
-
 //*****************************************************************************
 //
 // function prototypes
@@ -56,7 +55,7 @@ typedef struct
 void NoteIncrement(Note* CurrentNote);
 void NoteInitialize(Note* CurrentNote, float fFrequency);
 void NoteInterpolate(Note* CurrentNote);
-void NoteOn(Note* CurrentNote);
+void NoteOn(Note* CurrentNote, float fFrequency);
 void NoteOff(Note* CurrentNote);
 void NotePlay(Note* CurrentNote);
 void NoteSet(Note* CurrentNote, float fFrequency);
@@ -65,12 +64,15 @@ void SineInitialize();
 void SquareInitialize();
 void SawtoothInitialize();
 
-void FilterInitialize();
+void InitializeFilter();
 void FilterSetCutoff(float fCutoff);
 void FilterSetDamping(float fDamping);
 void FilterProcess(float fInput);
 float FilterOutputLow();
 float FilterOutputHigh();
 float FilterOutputBand();
+
+void InitializeNoteArray();
+void NoteArrayPlay();
 
 #endif /* DSP_H_ */

@@ -23,11 +23,12 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
 // custom includes
+#include "cmd.h"
 #include "dac.h"
 #include "dsp.h"
 
 // test toggling of debug LED
-#define DEBUG_BLINK_LED
+//#define DEBUG_BLINK_LED
 // test audio output of single note
 //#define DBUG_SSI_OUTPUT
 // test ssi input command 
@@ -41,12 +42,10 @@
 // static global defines
 //
 //*****************************************************************************
-
 static uint32_t ui32OutSample = 0x00000000;
 //static uint8_t* pui8SPITx;
 static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
-
 
 //*****************************************************************************
 //
@@ -56,15 +55,19 @@ static volatile uint8_t ui8State = 0;
 void Timer0IntHandler(void)
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-#ifdef DEBUG_BLINK_LED
+#if defined DEBUG_BLINK_LED
 	// LED will toggle on/off every second
 	GPIO_PORTE_DATA_R ^= 0x01;
 #elif defined DEBUG_SSI_INPUT
-	SSIGetDataNonBlocking(SSI0_BASE, &ui32SPIRx)
-	if (ui32SPIRx != 0)
+	if (SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx) != 0)
 	{
-		GPIO_PORTE_DATA_R = 0x01;
+		GPIO_PORTE_DATA_R = 0x01;	
 	}
+	else
+	{
+		GPIO_PORTE_DATA_R = 0x00;
+		ui32SPIRx = 0;
+	}	
 #else	 
 	// clear the interrupt
 	pui8SPITx = (uint8_t*)&ui32OutSample;
@@ -80,12 +83,26 @@ void Timer0IntHandler(void)
 	SSI3_DR_R = pui8SPITx[0];
 	
 	// if this triggers, CPU is taking too long to generate samples
-	/*
-	if (ui8State == SAMPLE_PREPARE)
+	if (ui8State == SAMPLE_PREPARE) {GPIO_PORTE_DATA_R ^= 0x01;}
+	
+	while ((SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx)) != 0)
 	{
-		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 8);
+		switch (ui32SPIRx & CMD_MASK)
+		{
+			case CMD_NOTE_ON:
+			case CMD_NOTE_OFF:
+			case CMD_NOTE_ALL_OFF:
+			case CMD_SET_ATTACK:
+			case CMD_SET_HOLD:
+			case CMD_SET_RELEASE:
+			case CMD_SET_CUTOFF_COURSE:
+			case CMD_SET_CUTOFF_FINE:
+			case CMD_SET_Q:
+			case CMD_SET_FILTER_TYPE:
+			case CMD_SET_WAVEFORM_TYPE:
+			case CMD_SET_VOLUME:
 	}
-	*/
+	
 	// wait to de-assert CS until all 24 bits have transmitted
 	while (SSI3_SR_R & SSI_SR_BSY) {}
 	GPIO_PORTD_DATA_R |= 0x02;
@@ -128,7 +145,7 @@ void InitializeSPI()
     GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_3 |
                    GPIO_PIN_2);
 	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
-	SSI_MODE_SLAVE, SysCtlClockGet()/3, 16);
+					   SSI_MODE_SLAVE, SysCtlClockGet()/10, 16);
 	SSIEnable(SSI0_BASE);
 		
 	// output SSI
@@ -184,6 +201,7 @@ void InitializeSystem()
 	InitializeGPIO();
 }
 
+
 //*****************************************************************************
 //
 // main routine
@@ -191,25 +209,24 @@ void InitializeSystem()
 //*****************************************************************************
 Note NoteArray[SIZE_NOTE_ARRAY];
 uint8_t ui8NoteCount;
-float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
-float fOutSample;
+const float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
+
 int main(void)
 {
 	uint32_t n;
-	InitializeSystem();
-    
-	for (n = 0; n < SIZE_NOTE_ARRAY; n++)
-	{
-		NoteInitialize(&NoteArray[n], 100.0);
-	}
+	float fOutSample;
 	
-#ifdef DBUG_SSI_OUTPUT
-	NoteOn(&NoteArray[1]);
-#endif
-	ui8State = SAMPLE_PREPARE;
+	InitializeSystem();
+	InitializeNoteArray();
+    InitializeFilter();
 	// start the timer module with interrupt
-
 	InitializeTimer();
+
+#ifdef DBUG_SSI_OUTPUT
+	NoteOn(&NoteArray[1], 440.0);
+#endif
+
+	ui8State = SAMPLE_PREPARE;
 
 	while(1)
 	{
@@ -217,6 +234,12 @@ int main(void)
 		while (ui8State == SAMPLE_READY) {}
 		ui8NoteCount = 0;
         fOutSample = 0;
+        
+        
+        /***********************************************
+		 calculate next output sample
+		***********************************************/
+		/*
         for (n = 0; n < SIZE_NOTE_ARRAY; n++)
 		{
 			if (NoteArray[n].ui8State == NOTE_OFF) continue;
@@ -224,6 +247,14 @@ int main(void)
             ui8NoteCount++;
 			fOutSample += NoteArray[n].fSample;
 		}
+		*/
+		fOutSample = NoteArrayPlay();
+		
+		
+		/***********************************************
+		 preperation of sample for dac output
+		***********************************************/
+		
 		fOutSample *= pfNoteAmplitudeScale[ui8NoteCount];       // scale amplitude based on active notes to avoid clipping
         fOutSample += 0.5;                                      // DC offset to allow sample to rest between 0 and 3V
         ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   // convert to fixed point
