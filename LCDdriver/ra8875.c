@@ -41,31 +41,27 @@
 
 
 
-
-
-
-
-void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
-		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
+void ra8875init(//uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
+		uint32_t base_cs, uint32_t base_rst, /*uint32_t SSIcfg,
 		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
-		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs, uint32_t SSICS_pin,
+		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs,*/ uint32_t SSICS_pin,
 		uint32_t cs_pin, uint32_t rst_pin, uint32_t base_ssi,
 		uint32_t SSICLK_pin, uint32_t SSIRX_pin, uint32_t SSITX_pin,
 		uint32_t base_int, uint32_t touch_int,
 		uint16_t width, uint16_t height)
 {
-	ra8875.GPIOcfg=GPIOcfg;
+//	ra8875.GPIOcfg=GPIOcfg;
 	ra8875.base_cs=base_cs;
 	ra8875.base_rst=base_rst;
 	ra8875.cs=cs_pin;
 	ra8875.rst=rst_pin;
-	ra8875.SSIcfg=SSIcfg;
-	ra8875.SSIGPIOcfg=SSIGPIOcfg;
+//	ra8875.SSIcfg=SSIcfg;
+//	ra8875.SSIGPIOcfg=SSIGPIOcfg;
 	ra8875.base_ssi=base_ssi;
-	ra8875.SSIcfg_clk=SSIcfg_clk;
-	ra8875.SSIcfg_rx=SSIcfg_rx;
-	ra8875.SSIcfg_tx=SSIcfg_tx;
-	ra8875.SSIcfg_cs=SSIcfg_cs;
+//	ra8875.SSIcfg_clk=SSIcfg_clk;
+//	ra8875.SSIcfg_rx=SSIcfg_rx;
+//	ra8875.SSIcfg_tx=SSIcfg_tx;
+//	ra8875.SSIcfg_cs=SSIcfg_cs;
 	ra8875.ssi_cs=SSICS_pin;
 	ra8875.ssi_clk=SSICLK_pin;
 	ra8875.ssi_rx=SSIRX_pin;
@@ -92,7 +88,7 @@ void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
 /**************************************************************************/
 bool begin()
 {
-	SysCtlPeripheralEnable(ra8875.GPIOcfg);
+/*	SysCtlPeripheralEnable(ra8875.GPIOcfg);
 
 	//pinMode(_cs, OUTPUT);
 	GPIOPinTypeGPIOOutput(ra8875.base_cs,ra8875.cs);
@@ -102,7 +98,7 @@ bool begin()
 
 	//Touch int-ish
 	GPIOPinTypeGPIOInput(ra8875.base_int, ra8875.touch_int);
-
+*/
 	//digitalWrite(_cs, HIGH);
 	GPIOPinWrite(ra8875.base_cs, ra8875.cs, 0xFF);
 
@@ -118,31 +114,31 @@ bool begin()
 	//delay(100);
 	SysCtlDelay(ONE_MILISEC);
 
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+//	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+//	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
 	//SysCtlPeripheralEnable(ra8875.SSIcfg);
 	//SysCtlPeripheralEnable(ra8875.SSIGPIOcfg);
 
-	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+//	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
 	//GPIOPinConfigure(GPIO_PA3_SSI0FSS);
-	GPIOPinConfigure(GPIO_PA4_SSI0RX);
-	GPIOPinConfigure(GPIO_PA5_SSI0TX);
+//	GPIOPinConfigure(GPIO_PA4_SSI0RX);
+//	GPIOPinConfigure(GPIO_PA5_SSI0TX);
 
 	//GPIOPinConfigure(ra8875.SSIcfg_clk);
 	//GPIOPinConfigure(ra8875.SSIcfg_cs);
 	//GPIOPinConfigure(ra8875.SSIcfg_rx);
 	//GPIOPinConfigure(ra8875.SSIcfg_tx);
 
-	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|/*GPIO_PIN_3|*/GPIO_PIN_4|GPIO_PIN_2);
+//	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|/*GPIO_PIN_3|*/GPIO_PIN_4|GPIO_PIN_2);
 
 	//GPIOPinTypeSSI(ra8875.base_ssi,ra8875.ssi_clk|ra8875.ssi_cs|ra8875.ssi_rx|ra8875.ssi_tx);
 
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 125000, 8);
+//	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 125000, 8);
 
 	//SSIConfigSetExpClk(ra8875.base_ssi, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 125000, 8);
 
-	SSIEnable(SSI0_BASE);
+//	SSIEnable(SSI0_BASE);
 	//SSIEnable(ra8875.base_ssi);
 
 
@@ -153,9 +149,9 @@ bool begin()
 
 	initialize();
 
-	SSIDisable(SSI0_BASE);
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);
-	SSIEnable(SSI0_BASE);
+//	SSIDisable(SSI0_BASE);
+//	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);
+//	SSIEnable(SSI0_BASE);
 
 	//SSIDisable(ra8875.base_ssi);
 	//SSIConfigSetExpClk(ra8875.base_ssi, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 4000000, 8);

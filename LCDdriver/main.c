@@ -21,22 +21,23 @@
 #include "ra8875.h"
 
 
-//#define SSI0_PCB_TEST
-#define MIDITEST
+//#define SSI0_PCBCOM
+//#define MIDITEST
 //#define LEDBLINK
-//#define SSI1_PF
+//#define SSI1_PCB_BUTTONS
+#define PCB_LCD
 
 int main()
 {
 	char string[15]="Hello World!";
-	uint32_t tx, ty, tmp, tmpA, tmpB;
+	uint32_t tx, ty, tmp;
 	uint16_t xScale, yScale;
 	slider sl1, sl2;//, sl3, sl4;
 	xyGrid xy;
 
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-#ifdef SSI0_PCB_TEST
+#ifdef SSI0_PCBCOM
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
@@ -64,6 +65,8 @@ int main()
 
 	TimerEnable(TIMER0_BASE, TIMER_A);
 
+  while(1);
+
 #elif defined MIDITEST
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
@@ -78,18 +81,28 @@ int main()
 
     while (1)
     {
+ /*   	UARTCharPut(UART1_BASE,~(0x01));
+    	UARTCharPut(UART1_BASE,~(0x02));
+    	UARTCharPut(UART1_BASE,~(0x04));
+    	UARTCharPut(UART1_BASE,0x08);
+    	UARTCharPut(UART1_BASE,0x0A);
+    	UARTCharPut(UART1_BASE,0x10);
+    	UARTCharPut(UART1_BASE,0x20);
+    	UARTCharPut(UART1_BASE,0x40);
+    	UARTCharPut(UART1_BASE,0x80);
+    	UARTCharPut(UART1_BASE,0xA0);
 //    	UARTCharPut(UART1_BASE,0xAA);
   //  	SysCtlDelay(ONEHUNDRED_MILISEC);
-    	UARTCharPut(UART1_BASE, 0x90);
+*/    	UARTCharPut(UART1_BASE, 0x90);
     	UARTCharPut(UART1_BASE, 0x69);
-    	UARTCharPut(UART1_BASE, 0x7F);
+    	UARTCharPut(UART1_BASE, 0xFF);
 
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
 
     	UARTCharPut(UART1_BASE, 0x80);
     	UARTCharPut(UART1_BASE, 0x69);
-    	UARTCharPut(UART1_BASE, 0x7F);
+    	UARTCharPut(UART1_BASE, 0xFF);
 
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
@@ -125,7 +138,7 @@ int main()
 	while(1);
 
 
-#elif defined SSI1_PF
+#elif defined SSI1_PCB_BUTTONS
 
 				/*CODE TO GET SSI1 WORKING*/
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1/*SYSCTL_PERIPH_SSI0*/);
@@ -136,43 +149,35 @@ int main()
 	HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;
 
 
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-	GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2);
-	GPIOPinConfigure(GPIO_PF1_SSI1TX/*GPIO_PA5_SSI0TX*/);
-	GPIOPinConfigure(GPIO_PF2_SSI1CLK/*GPIO_PA2_SSI0CLK*/);
-	GPIOPinConfigure(GPIO_PF3_SSI1FSS/*GPIO_PA3_SSI0FSS*/);
-	GPIOPinConfigure(GPIO_PF0_SSI1RX/*GPIO_PA4_SSI0RX*/);
-	GPIOPinTypeSSI(GPIO_PORTF_BASE,GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0
-			/*GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4*/);
-	SSIConfigSetExpClk(SSI1_BASE/*SSI0_BASE*/, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000, 8);
-	SSIEnable(SSI1_BASE/*SSI0_BASE*/);
-
-//		SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3/*SYSCTL_PERIPH_SSI0*/);
-//		SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD/*SYSCTL_PERIPH_GPIOA*/);
-//		GPIOPinConfigure(GPIO_PD3_SSI3TX/*GPIO_PA5_SSI0TX*/);
-//		GPIOPinConfigure(GPIO_PD0_SSI3CLK/*GPIO_PA2_SSI0CLK*/);
-//		GPIOPinConfigure(GPIO_PD1_SSI3FSS/*GPIO_PA3_SSI0FSS*/);
-//		GPIOPinConfigure(GPIO_PD2_SSI3RX/*GPIO_PA4_SSI0RX*/);
-//		GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0/*
-//				GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4*/);
-//		SSIConfigSetExpClk(SSI3_BASE/*SSI0_BASE*/, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000, 8);
-//		SSIEnable(SSI3_BASE/*SSI0_BASE*/);
+	//GPIOPinConfigure(GPIO_PF1_SSI1TX);
+	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);
+	GPIOPinConfigure(GPIO_PF2_SSI1CLK);
+	GPIOPinConfigure(GPIO_PF3_SSI1FSS);
+	GPIOPinConfigure(GPIO_PF0_SSI1RX);
+	GPIOPinTypeSSI(GPIO_PORTF_BASE,
+			GPIO_PIN_3|GPIO_PIN_2/*|GPIO_PIN_1*/|GPIO_PIN_0);
 
 
-	GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0xFF);
+
+	SSIConfigSetExpClk(SSI1_BASE, SysCtlClockGet(),
+			SSI_FRF_MOTO_MODE_2, SSI_MODE_MASTER, 1000000, 16);
+	SSIEnable(SSI1_BASE);
 
 	while(1)
 	{
-		flushSSIFIFO(SSI1_BASE/*SSI0_BASE*/);
-		mySSIDataPut(SSI1_BASE/*SSI0_BASE*/,0xAA);//load data
-		SSIDataGet(SSI1_BASE/*SSI0_BASE*/,&tmpA);
-//				flushSSIFIFO(SSI3_BASE/*SSI0_BASE*/);
-//				mySSIDataPut(SSI3_BASE/*SSI0_BASE*/,0xAA);//load data
-//				SSIDataGet(SSI3_BASE/*SSI0_BASE*/,&tmpB);
-		if(tmpA==0)
-			GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0);
-		else
-			GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_2, 0xFF);
+		flushSSIFIFO(SSI1_BASE);
+		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
+		SysCtlDelay(500);
+		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0xFF);
+		SysCtlDelay(600);
+
+		SSIDataPut(SSI1_BASE,0);//load 16 bits of data
+		SSIDataGet(SSI1_BASE,&tmp);
+		SysCtlDelay(500);
+
+		SSIDataPut(SSI1_BASE,0);//load 16 bits of data
+		SSIDataGet(SSI1_BASE,&tmp);
+		SysCtlDelay(500);
 	}
 
 #else
@@ -187,6 +192,67 @@ int main()
 	//sl3=slider_get(230,20,"Test 3");
 	//sl4=slider_get(340,20,"Test 4");
 
+#ifdef PCB_LCD
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+
+	//chip select
+	GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE,GPIO_PIN_1);
+
+	//reset pin
+	GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE,GPIO_PIN_4);
+
+	//Touch int-ish
+	GPIOPinTypeGPIOInput(GPIO_PORTE_BASE,GPIO_PIN_5);
+
+	GPIOPinConfigure(GPIO_PD3_SSI3TX);
+	GPIOPinConfigure(GPIO_PD0_SSI3CLK);
+//	GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+	GPIOPinConfigure(GPIO_PD2_SSI3RX);
+	GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_3|GPIO_PIN_0|GPIO_PIN_2);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+			SSI_MODE_MASTER, 125000, 8);
+	SSIEnable(SSI3_BASE);
+
+	ra8875init(
+//		/*GPIOcfg*/SYSCTL_PERIPH_GPIOA,
+		/*base_cs*/GPIO_PORTD_BASE,
+		/*base_rst*/GPIO_PORTB_BASE,
+//		/*SSIcfg*/SYSCTL_PERIPH_SSI0,
+//		/*SSIGPIOcfg*/SYSCTL_PERIPH_GPIOA,
+//		/*SSIcfg_clk*/GPIO_PA2_SSI0CLK,
+//		/*SSIcfg_rx*/GPIO_PA4_SSI0RX,
+//		/*SSIcfg_tx*/GPIO_PA5_SSI0TX,
+//		/*SSIcfg_cs*/GPIO_PA3_SSI0FSS,
+		/*SSICS_pin*/GPIO_PIN_1,
+		/*cs_pin*/GPIO_PIN_1,
+		/*rst_pin*/GPIO_PIN_4,
+		/*base_ssi*/SSI3_BASE,
+		/*SSICLK_pin*/GPIO_PIN_0,
+		/*SSIRX_pin*/GPIO_PIN_2,
+		/*SSITX_pin*/GPIO_PIN_3,
+		/*base_int*/GPIO_PORTE_BASE,
+		/*touch_int*/GPIO_PIN_5,
+		/*width*/480,
+		/*height*/272);
+
+	if(!begin())
+	{
+		while(1)
+		{
+			//SHIT BE BROKE
+			SysCtlDelay(ONE_MILISEC);
+		}
+	}
+
+	SSIDisable(SSI3_BASE);
+	SSIConfigSetExpClk(SSI3_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+			SSI_MODE_MASTER, 4000000, 8);
+	SSIEnable(SSI3_BASE);
+
+#else
 	ra8875init(
 			/*GPIOcfg*/SYSCTL_PERIPH_GPIOA,
 			/*base_cs*/GPIO_PORTA_BASE,
@@ -209,15 +275,9 @@ int main()
 			/*width*/480,
 			/*height*/272);
 
-	  /* Initialise the display using 'RA8875_480x272' or 'RA8875_800x480' */
-	if(!begin())
-	{
-		while(1)
-		{
-			//SHIT BE BROKE
-			SysCtlDelay(ONE_MILISEC);
-		}
-	}
+	shit will break horribly if you dont fix anything
+#endif
+
 
 	displayOn(true);
 	GPIOX(true);      // Enable TFT - display enable tied to GPIOX
@@ -441,8 +501,8 @@ int main()
 void Timer0IntHandler()
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-#ifdef SSI0_PCB_TEST
-	SSIDataPut(SSI0_BASE, 0xAAAA);
+#ifdef SSI0_PCBCOM
+	SSIDataPut(SSI0_BASE, 0xAF0A);
 #else
 	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4))
 		GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);

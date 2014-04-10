@@ -22,10 +22,11 @@ text txtScaleType;
 void flushSSIFIFO(uint32_t SSIbase)
 {
 	uint32_t tmp, ass;
-	do
+  while((SSIDataGetNonBlocking(SSIbase,&ass))!=0);
+/*	do
 	{
 		tmp=SSIDataGetNonBlocking(SSIbase,&ass);
-	}while(tmp!=0);
+	}while(tmp!=0);*/
 }
 
 /*

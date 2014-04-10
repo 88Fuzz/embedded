@@ -6,7 +6,7 @@
 
 
 
-
+/*
 // Touch screen cal structs
 typedef struct Point
 {
@@ -24,13 +24,13 @@ typedef struct //Matrix
           Fn,
           Divider ;
 } tsMatrix_t;
+*/
 
 
-
-void ra8875init(uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
-		uint32_t base_cs, uint32_t base_rst, uint32_t SSIcfg,
+void ra8875init(//uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
+		uint32_t base_cs, uint32_t base_rst, /*uint32_t SSIcfg,
 		uint32_t SSIGPIOcfg, uint32_t SSIcfg_clk, uint32_t SSIcfg_rx,
-		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs, uint32_t SSICS_pin,
+		uint32_t SSIcfg_tx, uint32_t SSIcfg_cs,*/ uint32_t SSICS_pin,
 		uint32_t cs_pin, uint32_t rst_pin, uint32_t base_ssi,
 		uint32_t SSICLK_pin, uint32_t SSIRX_pin, uint32_t SSITX_pin,
 		uint32_t base_int, uint32_t touch_int,
