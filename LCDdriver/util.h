@@ -3,10 +3,8 @@
 #include "lcd.h"
 
 #define MICRO_NOTEON 0x0
-#define MICRO_NOTEOFF 0x1
-#define MICRO_NOTEALLOFF 0x2
-
-#define LOWESTNOTE 36
+#define MICRO_NOTEOFF 0x01
+#define MICRO_NOTEALLOFF 0x02
 
 #define ONE_MILISEC 26670
 #define TEN_MILISEC 266700

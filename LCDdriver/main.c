@@ -14,20 +14,20 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/udma.h"
 #include "driverlib/uart.h"
 #include "util.h"
 #include "lcd.h"
 #include "ra8875.h"
+#include "noteGen.h"
 
 
 //#define SSI0_PCBCOM
-#define MIDITEST
+//#define MIDITEST
 //#define LEDBLINK
-//#define SSI1_PCB_BUTTONS
+#define SSI1_PCB_BUTTONS
 //#define PCB_LCD
 
-deleteTHIS deleteTmp[8];
+deleteTHIS deleteTmp[7];
 
 int main()
 {
@@ -37,7 +37,7 @@ int main()
 	slider sl1, sl2;//, sl3, sl4;
 	xyGrid xy;
 
-	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
 #ifdef SSI0_PCBCOM
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
@@ -70,7 +70,7 @@ int main()
   while(1);
 
 #elif defined MIDITEST
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+ /*   SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 
     GPIOPinConfigure(GPIO_PB0_U1RX);
@@ -78,7 +78,16 @@ int main()
     GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), 31250,
-        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));*/
+
+
+  	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+  	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+  	GPIOPinConfigure(GPIO_PB0_U1RX); //B0 receptor
+  	GPIOPinConfigure(GPIO_PB1_U1TX); //B1 transmitter
+  	GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+  	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), 31250,
+  			(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE) );
 
 
     while (1)
@@ -95,16 +104,16 @@ int main()
     	UARTCharPut(UART1_BASE,0xA0);
 //    	UARTCharPut(UART1_BASE,0xAA);
   //  	SysCtlDelay(ONEHUNDRED_MILISEC);
-*/    	UARTCharPut(UART1_BASE, 0x90);
-    	UARTCharPut(UART1_BASE, 0x69);
-    	UARTCharPut(UART1_BASE, 0xFF);
+*/    	UARTCharPutNonBlocking(UART1_BASE, 0x90);
+		UARTCharPutNonBlocking(UART1_BASE, 0x69);
+		UARTCharPutNonBlocking(UART1_BASE, 0xFF);
 
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
 
-    	UARTCharPut(UART1_BASE, 0x80);
-    	UARTCharPut(UART1_BASE, 0x69);
-    	UARTCharPut(UART1_BASE, 0xFF);
+    	UARTCharPutNonBlocking(UART1_BASE, 0x80);
+    	UARTCharPutNonBlocking(UART1_BASE, 0x69);
+    	UARTCharPutNonBlocking(UART1_BASE, 0xFF);
 
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
     	SysCtlDelay(FIVEHUNDRED_MILISEC);
@@ -182,27 +191,31 @@ int main()
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
 
-	//Initialize buttons, (put this in an init function!)
+	deleteTmp[0].note=LOWESTNOTE;
 	deleteTmp[0].state=0;
-	deleteTmp[0].note=36;
 
+	deleteTmp[1].note=LOWESTNOTE+2;
 	deleteTmp[1].state=0;
-	deleteTmp[1].note=38;
 
+	deleteTmp[2].note=LOWESTNOTE+4;
 	deleteTmp[2].state=0;
-	deleteTmp[2].note=40;
 
+	deleteTmp[3].note=LOWESTNOTE+5;
 	deleteTmp[3].state=0;
-	deleteTmp[3].note=41;
 
+	deleteTmp[4].note=LOWESTNOTE+7;
 	deleteTmp[4].state=0;
-	deleteTmp[4].note=43;
 
+	deleteTmp[5].note=LOWESTNOTE+9;
 	deleteTmp[5].state=0;
-	deleteTmp[5].note=45;
 
+	deleteTmp[6].note=LOWESTNOTE+11;
 	deleteTmp[6].state=0;
-	deleteTmp[6].note=47;
+
+	//initialize the buttons yo!
+	initButtons();
+	genScale();
+	chordSelect();
 
 	//Configure timer0 for button scanning
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
@@ -559,8 +572,8 @@ int main()
 void Timer0IntHandler()
 {
 	uint32_t tmp;
-	uint16_t microData=0;
-	uint8_t j;
+	uint16_t scanData;
+	uint8_t j,k,keyChange=0,buttonCnt=0,acciOff,octOff;
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef SSI0_PCBCOM
 	SSIDataPut(SSI0_BASE, 0xAF0A);
@@ -589,22 +602,214 @@ void Timer0IntHandler()
 		else
 			GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
 
+		scanData=(uint32_t)tmp;
+
+		switch(j)
+		{
+		case 0:
+			buttonCnt+=16;
+			//loop through all 16 bits of scanned data
+			for(k=1;k<17;k++)
+			{
+				//if k is in the top 8 bits, it is a chord select button
+				if(k<9)
+				{
+					//bit mask it with 1 so that we only see if a single button is pressed
+					if(scanData<<k && 0x01)
+					{
+						switch(k)
+						{
+						case 1:
+							g_chord=FIRST;
+							break;
+						case 2:
+							g_chord=SECOND;
+							break;
+						case 3:
+							g_chord=THIRD;
+							break;
+						case 4:
+							g_chord=FOURTH;
+							break;
+						case 5:
+							g_chord=FIFTH;
+							break;
+						case 6:
+							g_chord=SIXTH;
+							break;
+						case 7:
+							g_chord=SEVENTH;
+							break;
+						}
+						//set the flag that says we need to re-generate our chord/key
+						keyChange=1;
+					}
+				}
+				else
+				{
+					if(scanData<<k && 0x01)
+					{
+						switch(k)
+						{
+							case 9:
+								g_key=Cs;
+								break;
+							case 10:
+								g_key=Ds;
+								break;
+							case 11:
+								g_keyType=MINOR;
+								break;
+							case 12:
+								g_keyType=MAJOR;
+								break;
+							case 13:
+								g_key=Fs;
+								break;
+							case 14:
+								g_key=Gs;
+								break;
+							case 15:
+								g_key=As;
+								break;
+						}
+						keyChange=1;
+					}
+				}
+			}
+			break;
+		case 1:
+			buttonCnt+=8;
+			for(k=1;k<17;k++)
+			{
+				//if we are now scanning note buttons, change scale/octaves if needed
+				if(k==9 && keyChange)
+				{
+					sendAllNotesOff();
+					genScale();
+					chordSelect();
+				}
+
+				if(k<9)
+				{
+					if(scanData<<k && 0x01)
+					{
+						switch(k)
+						{
+						case 1:
+							g_key=C;
+							break;
+						case 2:
+							g_key=D;
+							break;
+						case 3:
+							g_key=E;
+							break;
+						case 4:
+							g_key=F;
+							break;
+						case 5:
+							g_key=G;
+							break;
+						case 6:
+							g_key=A;
+							break;
+						case 7:
+							g_key=B;
+							break;
+						}
+						keyChange=1;
+					}
+				}
+				else
+				{
+					acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
+					if(scanData<<k && 0x01)
+					{
+						if(g_octavesAcci[acciOff].state==OFF &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=ON;
+							//SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
+						}
+					}
+					else
+					{
+						if(g_octavesAcci[acciOff].state==ON &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=OFF;
+							//SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
+						}
+					}
+					buttonCnt++;
+				}
+			}
+			break;
+		default:
+			for(k=1;k<17;k++)
+			{
+				if(k<9)
+				{
+					octOff=buttonCnt-OCTAVEBUTTONOFF;
+					if(scanData<<k && 0x01)
+					{
+						if(g_octaves[octOff].state==OFF)
+						{
+							g_octaves[octOff].state=ON;
+							SENDNOTEON_MICRO(g_octaves[octOff].midi);
+						}
+					}
+					else
+					{
+						if(g_octaves[octOff].state==ON)
+						{
+							g_octaves[octOff].state=OFF;
+							//SENDNOTEOFF_MICRO(g_octaves[octOff].midi);
+						}
+					}
+				}
+				else
+				{
+					acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
+					if(scanData<<k && 0x01)
+					{
+						if(g_octavesAcci[acciOff].state==OFF &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=ON;
+							//SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
+						}
+					}
+					else
+					{
+						if(g_octavesAcci[acciOff].state==ON &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=OFF;
+							//SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
+						}
+					}
+				}
+				buttonCnt++;
+			}
+			break;
+		}
+
 		if(tmp>0)
 		{
 			if(!deleteTmp[j].state)//button is not already pressed, send note on msg
 			{
-				microData=(MICRO_NOTEON<<12)+(deleteTmp[j].note-LOWESTNOTE);
+				SENDNOTEON_MICRO(deleteTmp[j].note);
 				deleteTmp[j].state=1;
-				SSIDataPut(SSI0_BASE, microData);
 			}
 		}
 		else
 		{
 			if(deleteTmp[j].state)//button is being pressed, and needs to send note off msg
 			{
-				microData=(MICRO_NOTEOFF<<12)+(deleteTmp[j].note-LOWESTNOTE);
+				SENDNOTEOFF_MICRO(deleteTmp[j].note);
 				deleteTmp[j].state=0;
-				SSIDataPut(SSI0_BASE, microData);
 			}
 		}
 	}
