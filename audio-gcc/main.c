@@ -26,7 +26,7 @@
 #include "cmd.h"
 #include "dac.h"
 #include "dsp.h"
-
+ 
 // test toggling of debug LED
 //#define DEBUG_BLINK_LED
 // test audio output of single note
@@ -43,10 +43,10 @@
 //
 //*****************************************************************************
 static uint32_t ui32OutSample = 0x00000000;
-//static uint8_t* pui8SPITx;
+static uint8_t* pui8SPITx;
 static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
-
+float tmp = 0;
 //*****************************************************************************
 //
 // Interrupt Vectors
@@ -90,7 +90,13 @@ void Timer0IntHandler(void)
 		switch (ui32SPIRx & CMD_MASK)
 		{
 			case CMD_NOTE_ON:
+				tmp = NoteArrayNoteOn(ui32SPIRx);
+				break;
 			case CMD_NOTE_OFF:
+				ui32SPIRx &= DATA_MASK; 
+				NoteArrayNoteOff(ui32SPIRx);
+				break;
+			/*
 			case CMD_NOTE_ALL_OFF:
 			case CMD_SET_ATTACK:
 			case CMD_SET_HOLD:
@@ -101,6 +107,10 @@ void Timer0IntHandler(void)
 			case CMD_SET_FILTER_TYPE:
 			case CMD_SET_WAVEFORM_TYPE:
 			case CMD_SET_VOLUME:
+			*/
+			//default:
+				// do nothing
+		}
 	}
 	
 	// wait to de-assert CS until all 24 bits have transmitted
@@ -213,17 +223,18 @@ const float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 
 
 int main(void)
 {
-	uint32_t n;
+	//uint32_t n;
 	float fOutSample;
 	
 	InitializeSystem();
 	InitializeNoteArray();
     InitializeFilter();
+    
 	// start the timer module with interrupt
 	InitializeTimer();
 
-#ifdef DBUG_SSI_OUTPUT
-	NoteOn(&NoteArray[1], 440.0);
+#ifdef DEBUG_SSI_OUTPUT
+	NoteOn(&NoteArray[0], 440.0);
 #endif
 
 	ui8State = SAMPLE_PREPARE;
@@ -232,8 +243,8 @@ int main(void)
 	{
 		// wait here until sample is output
 		while (ui8State == SAMPLE_READY) {}
-		ui8NoteCount = 0;
-        fOutSample = 0;
+		//ui8NoteCount = 0;
+        //fOutSample = 0;
         
         
         /***********************************************
@@ -248,14 +259,14 @@ int main(void)
 			fOutSample += NoteArray[n].fSample;
 		}
 		*/
-		fOutSample = NoteArrayPlay();
-		
+		fOutSample = NoteArrayProcess();
+		//fOutSample = FilterProcess(fOutSample);
 		
 		/***********************************************
 		 preperation of sample for dac output
 		***********************************************/
 		
-		fOutSample *= pfNoteAmplitudeScale[ui8NoteCount];       // scale amplitude based on active notes to avoid clipping
+        fOutSample *= 0.2;
         fOutSample += 0.5;                                      // DC offset to allow sample to rest between 0 and 3V
         ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   // convert to fixed point
 		ui32OutSample *= 64;                                    // "left shift" by 6, multiply is a single cycle 

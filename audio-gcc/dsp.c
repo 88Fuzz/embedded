@@ -12,7 +12,6 @@
 //
 //*****************************************************************************
 static Note NoteArray[SIZE_NOTE_ARRAY];
-static uint8_t ui8NoteCount;
 const static float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
 
 static FilterParameters FilterParams;
@@ -44,7 +43,7 @@ void NoteInitialize(Note* CurrentNote)
 {
 	CurrentNote->fFrequency = 0;
 	// value to increment each time increment function is called
-	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
+	CurrentNote->fIncrement = 0;
 	CurrentNote->fPosition = 0;
 	CurrentNote->fSample = 0;
 	CurrentNote->ui16Sample = 0;
@@ -113,6 +112,7 @@ void NoteSet(Note* CurrentNote, float fFrequency)
 
 void InitializeNoteArray()
 {
+    uint16_t n;
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
 	NoteInitialize(&NoteArray[n]);
@@ -122,17 +122,54 @@ void InitializeNoteArray()
 
 float NoteArrayProcess()
 {
-    float fOutSample;
+    float fOutSample = 0.0;
+    uint16_t ui16NoteCount = 0;
+    volatile uint16_t n;
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
-	if (NoteArray[n].ui8State == NOTE_OFF) continue;
-	NotePlay(&NoteArray[n]);
-	ui8NoteCount++;
-	fOutSample += NoteArray[n].fSample;
+	if (NoteArray[n].ui8State == NOTE_ON)
+	{
+	    NotePlay(&NoteArray[n]);
+	    ui16NoteCount++;
+	    fOutSample += NoteArray[n].fSample;
+	}
     }
     
+    fOutSample *= pfNoteAmplitudeScale[ui16NoteCount];       // scale amplitude based on active notes to avoid clipping
     return fOutSample;
+}
+
+
+float NoteArrayNoteOn(uint32_t ui32Data)
+{
+    uint16_t n;
+    
+    for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+    {
+	if (NoteArray[n].ui8State == NOTE_OFF)
+	{
+	    NoteOn(&NoteArray[n],pfNoteFrequency[ui32Data]); 
+	    return NoteArray[n].fFrequency;
+	}
+    }
+    return 0.0;
+}
+
+
+void NoteArrayNoteOff(uint32_t ui32Data)
+{
+    uint16_t n;
+    float freq = pfNoteFrequency[ui32Data];
+    
+    for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+    {
+	if (NoteArray[n].fFrequency == freq) 
+	{
+	    NoteOff(&NoteArray[n]); 
+	    break;
+	}
+    } 
 }
 
 
@@ -143,7 +180,7 @@ float NoteArrayProcess()
 //*****************************************************************************
 
 // reference: http://www.musicdsp.org/showone.php?id=142
-void FilterInitialize()
+void InitializeFilter()
 {
     // 2 * pi * fc / fs
     FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
@@ -154,19 +191,38 @@ void FilterInitialize()
     FilterParams.fNotch = 0.0;
     FilterParams.fDelay[0] = 0;
     FilterParams.fDelay[1] = 0;
+    FilterParams.pfOutput = &FilterParams.fLow;
 }
 
 void FilterSetCutoff(float fCutoff)
 {
-	FilterParams.fCutoff = fTwoPi * fCutoff * fSampleRateDiv;
+    FilterParams.fCutoff = fTwoPi * fCutoff * fSampleRateDiv;
 }
 
-void FilterParamsDamping(float fDamping)
+void FilterSetDamping(float fDamping)
 {
-	FilterParams.fDamping = fDamping;
+    FilterParams.fDamping = fDamping;
 }
 
-void FilterProcess(float fInput)
+void FilterSetOutput(uint16_t ui16Type)
+{
+    switch (ui16Type)
+    {
+	case 0:
+	    FilterParams.pfOutput = &FilterParams.fLow;
+	    break;
+	case 1:
+	    FilterParams.pfOutput = &FilterParams.fBand;
+	    break;
+	case 2:
+	    FilterParams.pfOutput = &FilterParams.fHigh;
+	    break;
+	default:
+	    FilterParams.pfOutput = &FilterParams.fLow;
+    }
+}
+
+float FilterProcess(float fInput)
 {
     // algorithm
     // loop
@@ -196,19 +252,6 @@ void FilterProcess(float fInput)
     // store delays
     FilterParams.fDelay[0] = FilterParams.fBand;
     FilterParams.fDelay[1] = FilterParams.fLow;
-}
-
-float FilterOutputLow()
-{
-	return FilterParams.fLow;
-}
-
-float FilterOutputHigh()
-{
-	return FilterParams.fHigh;
-}
-
-float FilterOutputBand()
-{
-	return FilterParams.fBand;
+    
+    return *FilterParams.pfOutput;
 }
