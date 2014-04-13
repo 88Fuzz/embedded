@@ -17,9 +17,9 @@ Bit Position: 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
 
 Command Number          Command Type            Data Range         
 
-0                       Note On                 0-82 (Midi 36-118)               
+0                       Note On                 0-82 (Midi 24-106)               
     
-1                       Note Off                0-82 (Midi 36-118)
+1                       Note Off                0-82 (Midi 24-106)
 
 2                       All Notes Off           none
 

@@ -183,7 +183,7 @@ void NoteArrayNoteOff(uint32_t ui32Data)
 void InitializeFilter()
 {
     // 2 * pi * fc / fs
-    FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
+    FilterParams.fCutoff = fTwoPi * 10000 * fSampleRateDiv;
     FilterParams.fDamping = 1.0;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
@@ -237,15 +237,18 @@ float FilterProcess(float fInput)
     // L,H,B,N
     
     // low pass
-    FilterParams.fLow = FilterParams.fDelay[1];
-    FilterParams.fLow += FilterParams.fCutoff * FilterParams.fDelay[0];
+    //FilterParams.fLow = FilterParams.fDelay[1];
+    //FilterParams.fLow += FilterParams.fCutoff * FilterParams.fDelay[0];
+    FilterParams.fLow = FilterParams.fDelay[1] + FilterParams.fCutoff * FilterParams.fDelay[0];
     // high pass
-    FilterParams.fHigh = fInput;
-    FilterParams.fHigh -= FilterParams.fLow;
-    FilterParams.fHigh -= FilterParams.fDamping * FilterParams.fDelay[0];
+    //FilterParams.fHigh = fInput;
+    //FilterParams.fHigh -= FilterParams.fLow;
+    //FilterParams.fHigh -= FilterParams.fDamping * FilterParams.fDelay[0];
+    FilterParams.fHigh = fInput - FilterParams.fLow - FilterParams.fDamping * FilterParams.fDelay[0];
     // band pass
-    FilterParams.fBand = FilterParams.fCutoff * FilterParams.fHigh;
-    FilterParams.fBand += FilterParams.fDelay[0];
+    //FilterParams.fBand = FilterParams.fCutoff;
+    //FilterParams.fBand += FilterParams.fDelay[0];
+    FilterParams.fBand = FilterParams.fCutoff * FilterParams.fHigh + FilterParams.fDelay[0];
     // notch pass
     // FilterParams.fNotch = FilterParams.fHigh + FilterParams.fLow;
     

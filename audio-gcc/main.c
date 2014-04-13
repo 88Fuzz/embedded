@@ -30,7 +30,7 @@
 // test toggling of debug LED
 //#define DEBUG_BLINK_LED
 // test audio output of single note
-//#define DBUG_SSI_OUTPUT
+//#define DEBUG_SSI_OUTPUT
 // test ssi input command 
 //#define DEBUG_SSI_INPUT
 
@@ -172,7 +172,6 @@ void InitializeSPI()
 	
 	// clear input rx fifo
 	while (SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx) != 0) {}
-	
 }
 
 
@@ -234,7 +233,7 @@ int main(void)
 	InitializeTimer();
 
 #ifdef DEBUG_SSI_OUTPUT
-	NoteOn(&NoteArray[0], 440.0);
+	tmp = NoteArrayNoteOn(1);
 #endif
 
 	ui8State = SAMPLE_PREPARE;
@@ -243,30 +242,20 @@ int main(void)
 	{
 		// wait here until sample is output
 		while (ui8State == SAMPLE_READY) {}
-		//ui8NoteCount = 0;
-        //fOutSample = 0;
         
         
         /***********************************************
 		 calculate next output sample
 		***********************************************/
-		/*
-        for (n = 0; n < SIZE_NOTE_ARRAY; n++)
-		{
-			if (NoteArray[n].ui8State == NOTE_OFF) continue;
-			NotePlay(&NoteArray[n]);
-            ui8NoteCount++;
-			fOutSample += NoteArray[n].fSample;
-		}
-		*/
 		fOutSample = NoteArrayProcess();
 		//fOutSample = FilterProcess(fOutSample);
+		
 		
 		/***********************************************
 		 preperation of sample for dac output
 		***********************************************/
 		
-        fOutSample *= 0.2;
+        fOutSample *= 0.9;
         fOutSample += 0.5;                                      // DC offset to allow sample to rest between 0 and 3V
         ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   // convert to fixed point
 		ui32OutSample *= 64;                                    // "left shift" by 6, multiply is a single cycle 
