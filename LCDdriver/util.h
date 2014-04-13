@@ -2,6 +2,12 @@
 #define MYFUNCS_H_
 #include "lcd.h"
 
+#define MICRO_NOTEON 0x0
+#define MICRO_NOTEOFF 0x1
+#define MICRO_NOTEALLOFF 0x2
+
+#define LOWESTNOTE 36
+
 #define ONE_MILISEC 26670
 #define TEN_MILISEC 266700
 #define ONEHUNDRED_MILISEC 2667000
@@ -18,5 +24,11 @@ void flushSSIFIFO(uint32_t);
 void mySSIDataPut(uint32_t , uint32_t);
 void MYstrcpy(char *, char*);
 void strAppendInt(char *, uint8_t);
+
+typedef struct
+{
+	uint8_t note;
+	uint8_t state;
+} deleteTHIS;
 
 #endif /* MYFUNCS_H_ */

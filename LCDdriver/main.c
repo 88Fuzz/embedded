@@ -22,10 +22,12 @@
 
 
 //#define SSI0_PCBCOM
-//#define MIDITEST
+#define MIDITEST
 //#define LEDBLINK
 //#define SSI1_PCB_BUTTONS
-#define PCB_LCD
+//#define PCB_LCD
+
+deleteTHIS deleteTmp[8];
 
 int main()
 {
@@ -148,6 +150,7 @@ int main()
 	HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= 0x01;
 	HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0;
 
+	//configure SPI communication for button scaning
 
 	//GPIOPinConfigure(GPIO_PF1_SSI1TX);
 	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);
@@ -157,13 +160,68 @@ int main()
 	GPIOPinTypeSSI(GPIO_PORTF_BASE,
 			GPIO_PIN_3|GPIO_PIN_2/*|GPIO_PIN_1*/|GPIO_PIN_0);
 
-
-
 	SSIConfigSetExpClk(SSI1_BASE, SysCtlClockGet(),
 			SSI_FRF_MOTO_MODE_2, SSI_MODE_MASTER, 1000000, 16);
 	SSIEnable(SSI1_BASE);
 
-	while(1)
+
+	//configure SPI communication between micros
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+	GPIOPinConfigure(GPIO_PA5_SSI0TX);
+	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+	GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+	GPIOPinConfigure(GPIO_PA4_SSI0RX);
+	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
+			SSI_MODE_MASTER, SysCtlClockGet()/10, 16);
+	SSIEnable(SSI0_BASE);
+
+	//Configure error LED
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
+
+	//Initialize buttons, (put this in an init function!)
+	deleteTmp[0].state=0;
+	deleteTmp[0].note=36;
+
+	deleteTmp[1].state=0;
+	deleteTmp[1].note=38;
+
+	deleteTmp[2].state=0;
+	deleteTmp[2].note=40;
+
+	deleteTmp[3].state=0;
+	deleteTmp[3].note=41;
+
+	deleteTmp[4].state=0;
+	deleteTmp[4].note=43;
+
+	deleteTmp[5].state=0;
+	deleteTmp[5].note=45;
+
+	deleteTmp[6].state=0;
+	deleteTmp[6].note=47;
+
+	//Configure timer0 for button scanning
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+
+	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+
+	//tmp=SysCtlClockGet();
+	//ui32Period=SysCtlClockGet()/160;
+
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/500000-1);
+
+	IntEnable(INT_TIMER0A);
+	TimerIntEnable(TIMER0_BASE,TIMER_TIMA_TIMEOUT);
+	IntMasterEnable();
+
+	TimerEnable(TIMER0_BASE, TIMER_A);
+
+	while(1);
+	/*while(1)
 	{
 		flushSSIFIFO(SSI1_BASE);
 		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
@@ -178,7 +236,7 @@ int main()
 		SSIDataPut(SSI1_BASE,0);//load 16 bits of data
 		SSIDataGet(SSI1_BASE,&tmp);
 		SysCtlDelay(500);
-	}
+	}*/
 
 #else
 					/*CODE FOR TOUCH SCREEN*/
@@ -500,9 +558,56 @@ int main()
 
 void Timer0IntHandler()
 {
+	uint32_t tmp;
+	uint16_t microData=0;
+	uint8_t j;
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef SSI0_PCBCOM
 	SSIDataPut(SSI0_BASE, 0xAF0A);
+#elif defined SSI1_PCB_BUTTONS
+
+	flushSSIFIFO(SSI1_BASE);
+	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
+	SysCtlDelay(250);
+	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0xFF);
+	SysCtlDelay(250);
+
+	//load 7 sets of 16 buttons
+	for(j=0;j<7;j++)
+	{
+		SSIDataPut(SSI1_BASE,0);//load 16 bits of data
+		SysCtlDelay(250);
+	}
+
+	//should run 7 times. We will have problems if it doesn't
+	//while((SSIDataGetNonBlocking(SSIbase,&tmp))!=0)
+	for(j=0;j<7;j++)
+	{
+		//turn on led if not scanning all the buttons
+		if((SSIDataGetNonBlocking(SSI1_BASE,&tmp))==0)
+			GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0xFF);
+		else
+			GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
+
+		if(tmp>0)
+		{
+			if(!deleteTmp[j].state)//button is not already pressed, send note on msg
+			{
+				microData=(MICRO_NOTEON<<12)+(deleteTmp[j].note-LOWESTNOTE);
+				deleteTmp[j].state=1;
+				SSIDataPut(SSI0_BASE, microData);
+			}
+		}
+		else
+		{
+			if(deleteTmp[j].state)//button is being pressed, and needs to send note off msg
+			{
+				microData=(MICRO_NOTEOFF<<12)+(deleteTmp[j].note-LOWESTNOTE);
+				deleteTmp[j].state=0;
+				SSIDataPut(SSI0_BASE, microData);
+			}
+		}
+	}
 #else
 	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4))
 		GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
