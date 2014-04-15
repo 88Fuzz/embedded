@@ -20,14 +20,13 @@
 #include "ra8875.h"
 #include "noteGen.h"
 
-
 //#define SSI0_PCBCOM
 //#define MIDITEST
 //#define LEDBLINK
 #define SSI1_PCB_BUTTONS
 //#define PCB_LCD
 
-deleteTHIS deleteTmp[7];
+//deleteTHIS deleteTmp[7];
 
 int main()
 {
@@ -191,7 +190,7 @@ int main()
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 	GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4);
 
-	deleteTmp[0].note=LOWESTNOTE;
+/*	deleteTmp[0].note=LOWESTNOTE;
 	deleteTmp[0].state=0;
 
 	deleteTmp[1].note=LOWESTNOTE+2;
@@ -210,7 +209,7 @@ int main()
 	deleteTmp[5].state=0;
 
 	deleteTmp[6].note=LOWESTNOTE+11;
-	deleteTmp[6].state=0;
+	deleteTmp[6].state=0;*/
 
 	//initialize the buttons yo!
 	initButtons();
@@ -572,8 +571,8 @@ int main()
 void Timer0IntHandler()
 {
 	uint32_t tmp;
-	uint16_t scanData;
-	uint8_t j,k,keyChange=0,buttonCnt=0,acciOff,octOff;
+	uint16_t scanData, shiftData;
+	uint8_t j,k,keyChange=0,acciOff,baseAcciOff,baseOctOff,octOff;
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 #ifdef SSI0_PCBCOM
 	SSIDataPut(SSI0_BASE, 0xAF0A);
@@ -604,20 +603,38 @@ void Timer0IntHandler()
 
 		scanData=(uint32_t)tmp;
 
-		switch(j)
+//		switch(j)
+		if(j==0)
 		{
-		case 0:
-			buttonCnt+=16;
+		//case 0:
 			//loop through all 16 bits of scanned data
-			for(k=1;k<17;k++)
+			for(k=0;k<16;k++)
 			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
 				//if k is in the top 8 bits, it is a chord select button
-				if(k<9)
+				if(k<8)
 				{
 					//bit mask it with 1 so that we only see if a single button is pressed
-					if(scanData<<k && 0x01)
+					//tmp=((scanData<<k)&0x01);
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
-						switch(k)
+						if(k==0)
+							g_chord=FIRST;
+						else if(k==1)
+							g_chord=SECOND;
+						else if(k==2)
+							g_chord=THIRD;
+						else if(k==3)
+							g_chord=FOURTH;
+						else if(k==4)
+							g_chord=FIFTH;
+						else if(k==5)
+							g_chord=SIXTH;
+						else if(k==6)
+							g_chord=SEVENTH;
+						/*switch(k)
 						{
 						case 1:
 							g_chord=FIRST;
@@ -640,16 +657,30 @@ void Timer0IntHandler()
 						case 7:
 							g_chord=SEVENTH;
 							break;
-						}
+						}*/
 						//set the flag that says we need to re-generate our chord/key
 						keyChange=1;
 					}
 				}
 				else
 				{
-					if(scanData<<k && 0x01)
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
-						switch(k)
+						if(k==8)
+							g_key=Cs;
+						else if(k==9)
+							g_key=Ds;
+						else if(k==10)
+							g_keyType=MINOR;
+						else if(k==11)
+							g_keyType=MAJOR;
+						else if(k==12)
+							g_key=Fs;
+						else if(k==13)
+							g_key=Gs;
+						else if(k==14)
+							g_key=As;
+						/*switch(k)
 						{
 							case 9:
 								g_key=Cs;
@@ -672,29 +703,50 @@ void Timer0IntHandler()
 							case 15:
 								g_key=As;
 								break;
-						}
+						}*/
 						keyChange=1;
 					}
 				}
 			}
-			break;
-		case 1:
-			buttonCnt+=8;
-			for(k=1;k<17;k++)
+		}
+		//	break;
+		else if(j==1)
+		{
+			baseAcciOff=28;
+		//case 1:
+			for(k=0;k<16;k++)
 			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
+
 				//if we are now scanning note buttons, change scale/octaves if needed
-				if(k==9 && keyChange)
+				if(k==8 && keyChange)
 				{
 					sendAllNotesOff();
 					genScale();
 					chordSelect();
 				}
 
-				if(k<9)
+				if(k<8)
 				{
-					if(scanData<<k && 0x01)
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
-						switch(k)
+						if(k==0)
+							g_key=C;
+						else if(k==1)
+							g_key=D;
+						else if(k==2)
+							g_key=E;
+						else if(k==3)
+							g_key=F;
+						else if(k==4)
+							g_key=G;
+						else if(k==5)
+							g_key=A;
+						else if(k==6)
+							g_key=B;
+						/*switch(k)
 						{
 						case 1:
 							g_key=C;
@@ -717,20 +769,20 @@ void Timer0IntHandler()
 						case 7:
 							g_key=B;
 							break;
-						}
+						}*/
 						keyChange=1;
 					}
 				}
 				else
 				{
-					acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
-					if(scanData<<k && 0x01)
+					acciOff=baseAcciOff+(k-8);//buttonCnt-OCTAVEACCIBUTTONOFF;
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
 						if(g_octavesAcci[acciOff].state==OFF &&
 								g_octavesAcci[acciOff].midi>0)
 						{
 							g_octavesAcci[acciOff].state=ON;
-							//SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
+							SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
 						}
 					}
 					else
@@ -739,20 +791,54 @@ void Timer0IntHandler()
 								g_octavesAcci[acciOff].midi>0)
 						{
 							g_octavesAcci[acciOff].state=OFF;
-							//SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
+							SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
 						}
 					}
-					buttonCnt++;
 				}
 			}
-			break;
-		default:
-			for(k=1;k<17;k++)
+		}
+		//	break;
+		//default:
+		else
+		{
+			//I could figure out math to do this, but I don't feel like it
+			if(j==2)
 			{
-				if(k<9)
+				baseOctOff=32;
+				baseAcciOff=21;
+			}
+			else if(j==3)
+			{
+				baseOctOff=24;
+				baseAcciOff=14;
+			}
+			else if(j==4)
+			{
+				baseOctOff=16;
+				baseAcciOff=7;
+			}
+			else if(j==5)
+			{
+				baseOctOff=8;
+				baseAcciOff=0;
+			}
+			else
+			{
+				baseOctOff=0;
+				baseAcciOff=0;
+			}
+
+			for(k=0;k<16;k++)
+			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
+
+				if(k<8)
 				{
-					octOff=buttonCnt-OCTAVEBUTTONOFF;
-					if(scanData<<k && 0x01)
+					octOff=baseOctOff+k;
+					//octOff=buttonCnt-OCTAVEBUTTONOFF;
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
 						if(g_octaves[octOff].state==OFF)
 						{
@@ -765,20 +851,21 @@ void Timer0IntHandler()
 						if(g_octaves[octOff].state==ON)
 						{
 							g_octaves[octOff].state=OFF;
-							//SENDNOTEOFF_MICRO(g_octaves[octOff].midi);
+							SENDNOTEOFF_MICRO(g_octaves[octOff].midi);
 						}
 					}
 				}
 				else
 				{
-					acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
-					if(scanData<<k && 0x01)
+					acciOff=baseAcciOff+(k-8);
+					//acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
+					if(shiftData)//((scanData<<k) & 0x01))
 					{
 						if(g_octavesAcci[acciOff].state==OFF &&
 								g_octavesAcci[acciOff].midi>0)
 						{
 							g_octavesAcci[acciOff].state=ON;
-							//SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
+							SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
 						}
 					}
 					else
@@ -787,16 +874,15 @@ void Timer0IntHandler()
 								g_octavesAcci[acciOff].midi>0)
 						{
 							g_octavesAcci[acciOff].state=OFF;
-							//SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
+							SENDNOTEOFF_MICRO(g_octavesAcci[acciOff].midi);
 						}
 					}
 				}
-				buttonCnt++;
 			}
-			break;
+		//	break;
 		}
 
-		if(tmp>0)
+/*		if(tmp>0)
 		{
 			if(!deleteTmp[j].state)//button is not already pressed, send note on msg
 			{
@@ -811,7 +897,7 @@ void Timer0IntHandler()
 				SENDNOTEOFF_MICRO(deleteTmp[j].note);
 				deleteTmp[j].state=0;
 			}
-		}
+		}*/
 	}
 #else
 	if(GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4))

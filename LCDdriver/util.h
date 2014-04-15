@@ -23,10 +23,10 @@ void mySSIDataPut(uint32_t , uint32_t);
 void MYstrcpy(char *, char*);
 void strAppendInt(char *, uint8_t);
 
-typedef struct
+/*typedef struct
 {
 	uint8_t note;
 	uint8_t state;
-} deleteTHIS;
+} deleteTHIS;*/
 
 #endif /* MYFUNCS_H_ */
