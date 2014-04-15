@@ -25,10 +25,36 @@ const float* pfWaveTable = pfSawtoothTable;
 
 //*****************************************************************************
 //
+// WaveTable function definitions
+//
+//*****************************************************************************
+void WaveTableSelect(uint16_t ui16Type)
+/*
+ * set the waveform type
+ */
+{
+    switch (ui16Type)
+    {
+	case 0:
+	    pfWaveTable = pfSawtoothTable;
+	    break;
+	case 1:
+	    pfWaveTable = pfSquareTable;
+	    break;
+	default:
+	    pfWaveTable = pfSineTable;
+    }
+}
+
+//*****************************************************************************
+//
 // Note function definitions
 //
 //*****************************************************************************
 void NoteIncrement(Note* CurrentNote)
+/*
+ * increment a note's position in the wavetable
+ */
 {
 	CurrentNote->fPosition += CurrentNote->fIncrement;
 
@@ -40,6 +66,9 @@ void NoteIncrement(Note* CurrentNote)
 }
 
 void NoteInitialize(Note* CurrentNote)
+/*
+ * initialize a given note
+ */
 {
 	CurrentNote->fFrequency = 0;
 	// value to increment each time increment function is called
@@ -74,6 +103,9 @@ void NoteInterpolate(Note* CurrentNote)
 }
 
 void NoteOn(Note* CurrentNote, float fFrequency)
+/*
+ * turn note on and set its corresponding frequency
+ */
 {
 	CurrentNote->ui8State = NOTE_ON;
 	CurrentNote->fFrequency = fFrequency;
@@ -81,6 +113,9 @@ void NoteOn(Note* CurrentNote, float fFrequency)
 }
 
 void NoteOff(Note* CurrentNote)
+/*
+ * turn note offf
+ */
 {
 	CurrentNote->ui8State = NOTE_OFF;
 }
@@ -124,7 +159,7 @@ float NoteArrayProcess()
 {
     float fOutSample = 0.0;
     uint16_t ui16NoteCount = 0;
-    volatile uint16_t n;
+    uint16_t n;
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
@@ -136,7 +171,8 @@ float NoteArrayProcess()
 	}
     }
     
-    fOutSample *= pfNoteAmplitudeScale[ui16NoteCount];       // scale amplitude based on active notes to avoid clipping
+    // scale amplitude based on active notes to avoid clipping
+    fOutSample *= pfNoteAmplitudeScale[ui16NoteCount];       
     return fOutSample;
 }
 
@@ -183,8 +219,8 @@ void NoteArrayNoteOff(uint32_t ui32Data)
 void InitializeFilter()
 {
     // 2 * pi * fc / fs
-    FilterParams.fCutoff = fTwoPi * 10000 * fSampleRateDiv;
-    FilterParams.fDamping = 1.0;
+    FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
+    FilterParams.fDamping = 0.5;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
     FilterParams.fBand = 0.0;
@@ -237,18 +273,14 @@ float FilterProcess(float fInput)
     // L,H,B,N
     
     // low pass
-    //FilterParams.fLow = FilterParams.fDelay[1];
-    //FilterParams.fLow += FilterParams.fCutoff * FilterParams.fDelay[0];
     FilterParams.fLow = FilterParams.fDelay[1] + FilterParams.fCutoff * FilterParams.fDelay[0];
+    
     // high pass
-    //FilterParams.fHigh = fInput;
-    //FilterParams.fHigh -= FilterParams.fLow;
-    //FilterParams.fHigh -= FilterParams.fDamping * FilterParams.fDelay[0];
     FilterParams.fHigh = fInput - FilterParams.fLow - FilterParams.fDamping * FilterParams.fDelay[0];
+    
     // band pass
-    //FilterParams.fBand = FilterParams.fCutoff;
-    //FilterParams.fBand += FilterParams.fDelay[0];
     FilterParams.fBand = FilterParams.fCutoff * FilterParams.fHigh + FilterParams.fDelay[0];
+    
     // notch pass
     // FilterParams.fNotch = FilterParams.fHigh + FilterParams.fLow;
     
@@ -256,5 +288,5 @@ float FilterProcess(float fInput)
     FilterParams.fDelay[0] = FilterParams.fBand;
     FilterParams.fDelay[1] = FilterParams.fLow;
     
-    return *FilterParams.pfOutput;
+    return *(FilterParams.pfOutput);
 }

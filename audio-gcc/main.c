@@ -37,6 +37,7 @@
 #define SAMPLE_PREPARE 	0x80
 #define SAMPLE_READY 	0xC0
 
+
 //*****************************************************************************
 //
 // static global defines
@@ -47,17 +48,25 @@ static uint8_t* pui8SPITx;
 static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
 float tmp = 0;
+
+
 //*****************************************************************************
 //
 // Interrupt Vectors
 //
 //*****************************************************************************
+/*
+ * timer interrupt that occures once every sample period
+ */
 void Timer0IntHandler(void)
 {
+	// clear the timer interrupt flag
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
 #if defined DEBUG_BLINK_LED
 	// LED will toggle on/off every second
 	GPIO_PORTE_DATA_R ^= 0x01;
+
 #elif defined DEBUG_SSI_INPUT
 	if (SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx) != 0)
 	{
@@ -68,6 +77,7 @@ void Timer0IntHandler(void)
 		GPIO_PORTE_DATA_R = 0x00;
 		ui32SPIRx = 0;
 	}	
+
 #else	 
 	// clear the interrupt
 	pui8SPITx = (uint8_t*)&ui32OutSample;
@@ -90,11 +100,11 @@ void Timer0IntHandler(void)
 		switch (ui32SPIRx & CMD_MASK)
 		{
 			case CMD_NOTE_ON:
-				tmp = NoteArrayNoteOn(ui32SPIRx);
+				tmp = NoteArrayNoteOn(ui32SPIRx+24);
 				break;
 			case CMD_NOTE_OFF:
 				ui32SPIRx &= DATA_MASK; 
-				NoteArrayNoteOff(ui32SPIRx);
+				NoteArrayNoteOff(ui32SPIRx+24);
 				break;
 			/*
 			case CMD_NOTE_ALL_OFF:
@@ -104,8 +114,16 @@ void Timer0IntHandler(void)
 			case CMD_SET_CUTOFF_COURSE:
 			case CMD_SET_CUTOFF_FINE:
 			case CMD_SET_Q:
+			*/ 
 			case CMD_SET_FILTER_TYPE:
+				ui32SPIRx &= DATA_MASK;
+				FilterSetOutput(ui32SPIRx);
+				break;
 			case CMD_SET_WAVEFORM_TYPE:
+				ui32SPIRx &= DATA_MASK;
+				WaveTableSelect(ui32SPIRx);
+				break;
+			/*
 			case CMD_SET_VOLUME:
 			*/
 			//default:
@@ -129,23 +147,33 @@ void Timer0IntHandler(void)
 //
 //*****************************************************************************
 void InitializeFPU()
+/*
+ * initialize the floating point unit for dsp operation
+ */
 {
+	// don't bother push floting point registers onto stack
 	FPULazyStackingEnable();
+	// denormals treated as zero
 	FPUFlushToZeroModeSet(FPU_FLUSH_TO_ZERO_EN);
 	FPUEnable();
 }
 
 void InitializeGPIO()
+/*
+ * initialize necessary GPIO pins
+ */
 {
 	// PE0-PE3 used for debug
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
 	GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);
 }
 
-
 void InitializeSPI()
+/*
+ * initialize SSI input and output
+ */
 {
-	// input SSI
+	// input SSI for sending data to DAC
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     GPIOPinConfigure(GPIO_PA2_SSI0CLK);
@@ -158,7 +186,7 @@ void InitializeSPI()
 					   SSI_MODE_SLAVE, SysCtlClockGet()/10, 16);
 	SSIEnable(SSI0_BASE);
 		
-	// output SSI
+	// output SSI for recieving commands from other microcontroller
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 	GPIOPinConfigure(GPIO_PD0_SSI3CLK);
@@ -170,23 +198,29 @@ void InitializeSPI()
 	GPIOPinWrite(GPIO_PORTD_BASE, GPIO_PIN_1, 2);
 	SSIEnable(SSI3_BASE);
 	
-	// clear input rx fifo
+	// clear input SSI RX FIFO
 	while (SSIDataGetNonBlocking(SSI0_BASE, &ui32SPIRx) != 0) {}
 }
 
-
 void InitializeTimer()
+/*
+ * initialize timer to interrupt at desired sample period
+ */
 {
 	uint32_t ui32Period;
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+	
 #ifdef DEBUG_BLINK_LED
 	// set interrupt to occur once every second
 	ui32Period = SysCtlClockGet();
+
 #else
 	// set interrupt to occur at the sample rate
 	ui32Period = SysCtlClockGet() / VALUE_SAMPLE_RATE;
+
 #endif
+
 	TimerLoadSet(TIMER0_BASE, TIMER_A, ui32Period-1);
 	IntEnable(INT_TIMER0A);
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
@@ -195,6 +229,9 @@ void InitializeTimer()
 }
 
 void InitializeSystem()
+/*
+ * set operating frequency and call initialization routines
+ */
 {
 	// configure operating frequency to be at 80 MHz, system maximum
 	// system clock calculation: 400 MHz(PLL) / 2(system) / 2.5(divisor) = 80 MHz
@@ -222,7 +259,6 @@ const float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 
 
 int main(void)
 {
-	//uint32_t n;
 	float fOutSample;
 	
 	InitializeSystem();
@@ -243,23 +279,22 @@ int main(void)
 		// wait here until sample is output
 		while (ui8State == SAMPLE_READY) {}
         
-        
         /***********************************************
 		 calculate next output sample
 		***********************************************/
 		fOutSample = NoteArrayProcess();
-		//fOutSample = FilterProcess(fOutSample);
-		
+		fOutSample = FilterProcess(fOutSample);
 		
 		/***********************************************
 		 preperation of sample for dac output
 		***********************************************/
-		
-        fOutSample *= 0.9;
-        fOutSample += 0.5;                                      // DC offset to allow sample to rest between 0 and 3V
-        ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   // convert to fixed point
-		ui32OutSample *= 64;                                    // "left shift" by 6, multiply is a single cycle 
+        fOutSample *= 0.2;
+        // DC offset to allow sample to rest between 0 and 3V
+        fOutSample += 0.5;                                      
+        // convert to fixed point
+        ui32OutSample = (uint32_t) (UINT16_MAX * fOutSample);   
+		// "left shift" by 6 for DAC, multiply is a single cycle 
+		ui32OutSample *= 64;                                    
 		ui8State = SAMPLE_READY;
 	}
-
 }

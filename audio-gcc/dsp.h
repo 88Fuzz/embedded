@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+
 //*****************************************************************************
 //
 // defines
@@ -25,6 +26,7 @@
 #define FILTER_BAND_PASS        0x03;
 #define FILTER_NOTCH_PASS       0x04;
 
+
 typedef struct
 {
     uint8_t ui8State;		// on/off state of note
@@ -34,6 +36,7 @@ typedef struct
     float fPosition;		// wave table position
     float fSample;		// output sample float
 }Note;
+
 
 typedef struct
 {
@@ -48,11 +51,14 @@ typedef struct
     uint8_t ui8Type;
 }FilterParameters;
 
+
 //*****************************************************************************
 //
 // function prototypes
 //
 //*****************************************************************************
+void WaveTableSelect(uint16_t ui16Type);
+
 void NoteIncrement(Note* CurrentNote);
 void NoteInitialize(Note* CurrentNote);
 void NoteInterpolate(Note* CurrentNote);
@@ -75,5 +81,6 @@ void InitializeNoteArray();
 float NoteArrayProcess();
 float NoteArrayNoteOn(uint32_t ui32Data);
 void NoteArrayNoteOff(uint32_t ui32Data);
+
 
 #endif /* DSP_H_ */
