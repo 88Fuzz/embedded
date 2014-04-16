@@ -170,7 +170,7 @@ void chordSelect()
 			g_octaves[j].midi=g_scale[idx].midi+(12*g_octaves[j].octave);
 			g_octaves[j].state=OFF;
 
-			if(g_scaleAcci[idx].midi<0)
+	/*		if(g_scaleAcci[idx].midi<0)
 			{
 				g_octavesAcci[j].octave=octOff;
 				g_octavesAcci[j].midi=-1;
@@ -181,9 +181,38 @@ void chordSelect()
 				g_octavesAcci[j].octave=octOff;
 				g_octavesAcci[j].midi=g_scaleAcci[idx].midi+(12*g_octaves[j].octave);
 				g_octavesAcci[j].state=OFF;
-			}
+			}*/
 		}
 		cnt++;
+	}
+
+		octOff=0;
+		chordOff=g_chord;
+		balanceOff=0;
+
+	for(j=0;j<SCALEACCIMAX;j++)
+	{
+
+		idx=j+chordOff-balanceOff;
+		if(idx>6)
+		{
+			octOff++;
+			balanceOff+=7;
+			idx=j+chordOff-balanceOff;
+		}
+
+		if(g_scaleAcci[idx].midi<0)
+		{
+			g_octavesAcci[j].octave=octOff;
+			g_octavesAcci[j].midi=-1;
+			g_octavesAcci[j].state=OFF;
+		}
+		else
+		{
+			g_octavesAcci[j].octave=octOff;
+			g_octavesAcci[j].midi=g_scaleAcci[idx].midi+(12*g_octavesAcci[j].octave);
+			g_octavesAcci[j].state=OFF;
+		}
 	}
 }
 

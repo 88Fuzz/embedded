@@ -26,6 +26,8 @@
 #define SSI1_PCB_BUTTONS
 //#define PCB_LCD
 
+volatile uint32_t butt;
+
 //deleteTHIS deleteTmp[7];
 
 int main()
@@ -37,6 +39,8 @@ int main()
 	xyGrid xy;
 
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+
+	butt=0;
 
 #ifdef SSI0_PCBCOM
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
@@ -855,7 +859,7 @@ void Timer0IntHandler()
 						}
 					}
 				}
-				else
+				else if(j!=6 && k!=15)
 				{
 					acciOff=baseAcciOff+(k-8);
 					//acciOff=buttonCnt-OCTAVEACCIBUTTONOFF;
@@ -864,6 +868,7 @@ void Timer0IntHandler()
 						if(g_octavesAcci[acciOff].state==OFF &&
 								g_octavesAcci[acciOff].midi>0)
 						{
+							butt++;
 							g_octavesAcci[acciOff].state=ON;
 							SENDNOTEON_MICRO(g_octavesAcci[acciOff].midi);
 						}
