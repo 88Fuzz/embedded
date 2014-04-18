@@ -20,16 +20,13 @@
 #include "ra8875.h"
 #include "noteGen.h"
 #include "comm.h"
+#include "parameters.h"
 
 //#define SSI0_PCBCOM
 //#define MIDITEST
 //#define LEDBLINK
 #define SSI1_PCB_BUTTONS
 //#define PCB_LCD
-
-volatile uint32_t butt;
-
-//deleteTHIS deleteTmp[7];
 
 int main()
 {
@@ -40,8 +37,14 @@ int main()
 
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
-	butt=0;
 	g_keyChange=0;
+	g_attack=50;
+	g_hold=50;
+	g_release=50;
+	g_filterFine=50;
+	g_filterCourse=50;
+	g_filterQ=50;
+	g_volumeLevel=50;
 
 #ifdef SSI0_PCBCOM
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
@@ -342,8 +345,8 @@ int main()
 
 	fillScreen(g_backgroundColor);
 
-	sl1=slider_get(10,35,"Test 1");
-	sl2=slider_get(120,35,"Test 2");
+	sl1=slider_get(10,35,g_volumeLabel,&g_volumeLevel,MICRO_VOLUME);
+	sl2=slider_get(120,35,g_filterCourseLabel,&g_filterCourse,MICRO_FILTER_COURSE);//"Test 2");
 	xy=xyGrid_get(230,35, "x val", "y val");
 	g_txtKey=text_get(25,0,"Key: C", 75,15,WHITE_16BIT,g_backgroundColor);
 	g_txtKeyType=text_get(100,0,"Type: Major", 100,15,WHITE_16BIT,g_backgroundColor);

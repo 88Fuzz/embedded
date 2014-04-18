@@ -95,10 +95,11 @@ void xyGrid_draw(xyGrid *grid)
  *
  * returns initialized slider
  */
-slider slider_get(uint16_t x, uint16_t y, char *str)
+slider slider_get(uint16_t x, uint16_t y, char *str, uint8_t *initLevel, uint8_t levelID)
 {
 	slider sldr;
-	sldr.level=0;
+	sldr.level=initLevel;
+	sldr.levelID=levelID;
 	sldr.bgnd=rect_get(x,y,100,228,GREEN_16BIT);
 	sldr.label=text_get(x,y-15,str,sldr.bgnd.width,14,WHITE_16BIT,g_backgroundColor);
 	sldr.track=rect_get(sldr.bgnd.x+45,sldr.bgnd.y+15,10,200, RED_16BIT);
@@ -114,7 +115,7 @@ slider slider_get(uint16_t x, uint16_t y, char *str)
  */
 void slider_updateSlidePos(slider *sldr)
 {
-	sldr->slide.y=(sldr->track.height*sldr->level/100)+sldr->track.y-sldr->slide.height/2;
+	sldr->slide.y=(sldr->track.height**(sldr->level)/100)+sldr->track.y-sldr->slide.height/2;
 }
 
 /*
@@ -126,9 +127,9 @@ void slider_updateLevel(slider *sldr, uint16_t ty)
 	if(ty<sldr->track.y)
 		sldr->level=0;
 	else if(ty>sldr->track.y+sldr->track.height)
-		sldr->level=100;
+		*(sldr->level)=100;
 	else
-		sldr->level=(ty-sldr->track.y)*100/sldr->track.height;
+		*(sldr->level)=(ty-sldr->track.y)*100/sldr->track.height;
 }
 
 /*
@@ -161,7 +162,7 @@ bool slider_isTouched(slider *sldr, uint16_t tx, uint16_t ty)
 void slider_draw(slider *sldr)
 {
 	MYstrcpy(sldr->printLabel,sldr->label.label);
-	strAppendInt(sldr->printLabel,100-sldr->level);
+	strAppendInt(sldr->printLabel,100-*(sldr->level));
 
 	rect_draw(&sldr->bgnd);
 	rect_draw(&sldr->track);
@@ -200,6 +201,23 @@ text text_get(uint16_t x, uint16_t y, char *str, uint16_t bgWidth,
 		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
 {
 	text lbl;
+	lbl.x=x;
+	lbl.y=y;
+	MYstrcpy(lbl.label,str);
+	lbl.color=fntColor;
+	lbl.bgColor=bgColor;
+	lbl.bgWidth=bgWidth;
+	lbl.bgHeight=bgHeight;
+	return lbl;
+}
+
+/*
+ * returns a label ptr x, y, text, and color
+ */
+textPtr textPtr_get(uint16_t x, uint16_t y, char *str, uint16_t bgWidth,
+		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
+{
+	textPtr lbl;
 	lbl.x=x;
 	lbl.y=y;
 	MYstrcpy(lbl.label,str);

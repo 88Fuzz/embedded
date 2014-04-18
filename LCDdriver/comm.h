@@ -6,10 +6,20 @@
 #define NOTEOFF 0x80
 
 //MICRO commands
-#define MICRO_NOTEON 0x0
-#define MICRO_NOTEOFF 0x01
-#define MICRO_NOTEALLOFF 0x02
+#define MICRO_NOTEON			0x0
+#define MICRO_NOTEOFF			0x01
+#define MICRO_NOTEALLOFF		0x02
+#define	 MICRO_ATTACK 			0x03
+#define MICRO_HOLD				0x04
+#define MICRO_RELEASE			0x05
+#define MICRO_FILTER_COURSE		0x06
+#define MICRO_FILTER_FINE		0x07
+#define MICRO_FILTER_Q			0x08
+#define MICRO_FILTER_TYPE		0x09
+#define MICRO_WAVETYPE			0x0A
+#define MICRO_VOLUME			0x0B
 
+#define MAXPARAMVAL				4095
 
 #define SENDNOTEON_ALL(note,vel) \
 	SENDNOTEON_MIDI(note,vel); \

@@ -49,11 +49,23 @@ typedef struct
 
 typedef struct
 {
+	uint16_t x;
+	uint16_t y;
+	uint16_t color;
+	uint16_t bgColor;
+	uint16_t bgWidth;
+	uint16_t bgHeight;
+	char *label;//max 12 characters, 8 for sliders
+} textPtr;
+
+typedef struct
+{
 	rect slide;
 	rect track;
 	rect bgnd;
 	rect bottomEdge;
-	uint8_t level;//position of slider as a percent
+	uint8_t *level;//position of slider as a percent
+	uint8_t levelID;
 	text label;
 	char printLabel[13];//same as label.label, but has ": 0 level" appended at the end
 } slider;
@@ -81,7 +93,7 @@ void xyGrid_updateDotLevels(xyGrid *, uint16_t, uint16_t);
 void xyGrid_draw(xyGrid *);
 
 //slider functions
-slider slider_get(uint16_t , uint16_t , char *);
+slider slider_get(uint16_t x, uint16_t y, char *str, uint8_t *initLevel, uint8_t levelID);
 void slider_updateSlidePos(slider *);
 void slider_updateLevel(slider *, uint16_t);
 void slider_updateSlideLevel(slider *, uint16_t);
@@ -101,6 +113,9 @@ text text_get(uint16_t, uint16_t, char *, uint16_t,
 		uint16_t, uint16_t, uint16_t);
 void text_drawVal(text *,char *);
 void text_draw(text *);
+
+textPtr textPtr_get(uint16_t, uint16_t, char *, uint16_t,
+		uint16_t, uint16_t, uint16_t);
 
 ////special text functions
 //keyText text_get(uint16_t, uint16_t, char *, uint16_t,
