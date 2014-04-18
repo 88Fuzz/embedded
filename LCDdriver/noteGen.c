@@ -14,6 +14,7 @@
 #include "driverlib/uart.h"
 #include "noteGen.h"
 #include "util.h"
+#include "comm.h"
 
 
 note g_scale[SCALESIZE];
@@ -214,13 +215,13 @@ void chordSelect()
 			g_octavesAcci[j].state=OFF;
 		}
 	}
-//	g_updateKeyInfo=1;
+	g_keyChange=1;
 }
 
 void sendAllNotesOff()
 {
 	uint8_t j;
-//	SENDALLNOTEOFF_MICRO();
+	SENDALLNOTEOFF_MICRO();
 	for(j=0;j<SCALEMAX;j++)
 	{
 		if(g_octaves[j].state==ON)

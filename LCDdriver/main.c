@@ -19,6 +19,7 @@
 #include "lcd.h"
 #include "ra8875.h"
 #include "noteGen.h"
+#include "comm.h"
 
 //#define SSI0_PCBCOM
 //#define MIDITEST
@@ -40,7 +41,7 @@ int main()
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
 	butt=0;
-	g_updateKeyInfo=0;
+	g_keyChange=0;
 
 #ifdef SSI0_PCBCOM
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
@@ -344,9 +345,9 @@ int main()
 	sl1=slider_get(10,35,"Test 1");
 	sl2=slider_get(120,35,"Test 2");
 	xy=xyGrid_get(230,35, "x val", "y val");
-	g_txtKey=text_get(25,0,"Key: C", 50,15,WHITE_16BIT,g_backgroundColor);
-	g_txtKeyType=text_get(125,0,"Type: Major", 50,15,WHITE_16BIT,g_backgroundColor);
-	g_txtChord=text_get(225,0,"Chord: I", 50, 15, WHITE_16BIT, g_backgroundColor);
+	g_txtKey=text_get(25,0,"Key: C", 75,15,WHITE_16BIT,g_backgroundColor);
+	g_txtKeyType=text_get(100,0,"Type: Major", 100,15,WHITE_16BIT,g_backgroundColor);
+	g_txtChord=text_get(200,0,"Chord: I", 100, 15, WHITE_16BIT, g_backgroundColor);
 
 	touchEnable(true);
 	xScale=1024*10000/ra8875.width;
@@ -422,9 +423,9 @@ int main()
 				}
 			}
 		}
-		if(g_updateKeyInfo)
+		if(g_keyChange)
 		{
-			g_updateKeyInfo=0;
+			g_keyChange=0;
 			keyTypeAppend();
 			chordTextAppend();
 			keyTextAppend();

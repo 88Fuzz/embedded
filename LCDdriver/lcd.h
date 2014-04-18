@@ -47,48 +47,6 @@ typedef struct
 	char label[13];//max 12 characters, 8 for sliders
 } text;
 
-////keyText is different than other texts because the
-////label will never change
-//typedef struct
-//{
-//	uint16_t x;
-//	uint16_t y;
-//	uint16_t color;
-//	uint16_t bgColor;
-//	uint16_t bgWidth;
-//	uint16_t bgHeight;
-//	char baseLabel[9];
-//	char label[12];//max 12 characters, 8 for sliders
-//} keyText;
-//
-////chordText is different than other texts because the
-////label will never change
-//typedef struct
-//{
-//	uint16_t x;
-//	uint16_t y;
-//	uint16_t color;
-//	uint16_t bgColor;
-//	uint16_t bgWidth;
-//	uint16_t bgHeight;
-//	char baseLabel[9];
-//	char label[12];//max 12 characters, 8 for sliders
-//} chordText;
-//
-////keyTypeText is different than other texts because the
-////label will never change
-//typedef struct
-//{
-//	uint16_t x;
-//	uint16_t y;
-//	uint16_t color;
-//	uint16_t bgColor;
-//	uint16_t bgWidth;
-//	uint16_t bgHeight;
-//	char baseLabel[8];
-//	char label[11];//max 12 characters, 8 for sliders
-//} keyTypeText;
-
 typedef struct
 {
 	rect slide;

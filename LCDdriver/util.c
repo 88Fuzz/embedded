@@ -11,10 +11,11 @@
 #include "util.h"
 #include "lcd.h"
 #include "noteGen.h"
+#include "comm.h"
 
 LCDscreen ra8875;
 uint16_t g_backgroundColor=ORANGE_16BIT;
-uint8_t g_updateKeyInfo;
+uint8_t g_keyChange;
 text g_txtKey;
 text g_txtKeyType;
 text g_txtChord;
@@ -150,7 +151,7 @@ void scanButtons()
 {
 	uint32_t tmp;
 	uint16_t scanData, shiftData;
-	uint8_t j,k,keyChange=0,acciOff,baseAcciOff,baseOctOff,octOff;
+	uint8_t j,k,acciOff,baseAcciOff,baseOctOff,octOff;
 	flushSSIFIFO(SSI1_BASE);
 	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
 	SysCtlDelay(250);
@@ -203,7 +204,7 @@ void scanButtons()
 						else if(k==6)
 							g_chord=SEVENTH;
 						//set the flag that says we need to re-generate our chord/key
-						keyChange=1;
+						g_keyChange=1;
 					}
 				}
 				else
@@ -215,16 +216,16 @@ void scanButtons()
 						else if(k==9)
 							g_key=Ds;
 						else if(k==10)
-							g_keyType=MINOR;
-						else if(k==11)
 							g_keyType=MAJOR;
+						else if(k==11)
+							g_keyType=MINOR;
 						else if(k==12)
 							g_key=As;
 						else if(k==13)
 							g_key=Fs;
 						else if(k==14)
 							g_key=Gs;
-						keyChange=1;
+						g_keyChange=1;
 					}
 				}
 			}
@@ -239,7 +240,7 @@ void scanButtons()
 				shiftData=(scanData & shiftData);
 
 				//if we are now scanning note buttons, change scale/octaves if needed
-				if(k==8 && keyChange)
+				if(k==8 && g_keyChange)
 				{
 					sendAllNotesOff();
 					genScale();
@@ -264,7 +265,7 @@ void scanButtons()
 							g_key=A;
 						else if(k==6)
 							g_key=B;
-						keyChange=1;
+						g_keyChange=1;
 					}
 				}
 				else
@@ -404,25 +405,25 @@ void keyTextAppend()
 	if(g_key==0)
 		MYstrcpy(g_txtKey.label,"Key: C");
 	else if(g_key==1)
-		MYstrcpy(g_txtKey.label,"Key: Cs");
+		MYstrcpy(g_txtKey.label,"Key: C#");
 	else if(g_key==2)
 			MYstrcpy(g_txtKey.label,"Key: D");
 	else if(g_key==3)
-			MYstrcpy(g_txtKey.label,"Key: Ds");
+			MYstrcpy(g_txtKey.label,"Key: D#");
 	else if(g_key==4)
 			MYstrcpy(g_txtKey.label,"Key: E");
 	else if(g_key==5)
 			MYstrcpy(g_txtKey.label,"Key: F");
 	else if(g_key==6)
-			MYstrcpy(g_txtKey.label,"Key: Fs");
+			MYstrcpy(g_txtKey.label,"Key: F#");
 	else if(g_key==7)
 			MYstrcpy(g_txtKey.label,"Key: G");
 	else if(g_key==8)
-			MYstrcpy(g_txtKey.label,"Key: Gs");
+			MYstrcpy(g_txtKey.label,"Key: G#");
 	else if(g_key==9)
 			MYstrcpy(g_txtKey.label,"Key: A");
 	else if(g_key==10)
-			MYstrcpy(g_txtKey.label,"Key: As");
+			MYstrcpy(g_txtKey.label,"Key: A#");
 	else if(g_key==11)
 			MYstrcpy(g_txtKey.label,"Key: B");
 }

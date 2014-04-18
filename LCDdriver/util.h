@@ -2,11 +2,6 @@
 #define MYFUNCS_H_
 #include "lcd.h"
 
-//MICRO commands
-#define MICRO_NOTEON 0x0
-#define MICRO_NOTEOFF 0x01
-#define MICRO_NOTEALLOFF 0x02
-
 #define ONE_MILISEC 26670
 #define TEN_MILISEC 266700
 #define ONEHUNDRED_MILISEC 2667000
@@ -15,7 +10,7 @@
 extern text g_txtKey;
 extern text g_txtKeyType;
 extern text g_txtChord;
-extern uint8_t g_updateKeyInfo;
+extern uint8_t g_keyChange;
 extern LCDscreen ra8875;
 extern uint16_t g_backgroundColor;
 
