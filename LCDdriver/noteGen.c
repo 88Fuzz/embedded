@@ -214,18 +214,19 @@ void chordSelect()
 			g_octavesAcci[j].state=OFF;
 		}
 	}
+//	g_updateKeyInfo=1;
 }
 
 void sendAllNotesOff()
 {
 	uint8_t j;
-	SENDALLNOTEOFF_MICRO();
-/*	for(j=0;j<SCALEMAX;j++)
+//	SENDALLNOTEOFF_MICRO();
+	for(j=0;j<SCALEMAX;j++)
 	{
 		if(g_octaves[j].state==ON)
 		{
 			SENDNOTEOFF_MIDI(g_octaves[j].midi,0x00);
-			g_octaves[j].state==OFF;
+			g_octaves[j].state=OFF;
 		}
 	}
 
@@ -236,5 +237,5 @@ void sendAllNotesOff()
 			SENDNOTEOFF_MIDI(g_octavesAcci[j].midi,0x00);
 			g_octavesAcci[j].state=OFF;
 		}
-	}*/
+	}
 }

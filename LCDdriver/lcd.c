@@ -257,3 +257,49 @@ void circle_draw(circle *circ)
 {
 	fillCircle(circ->x,circ->y,circ->radius,circ->color);
 }
+
+
+//keyText keyText_get(uint16_t x, uint16_t y, uint16_t bgWidth,
+//		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
+//{
+//	keyText lbl;
+//	lbl.x=x;
+//	lbl.y=y;
+//	MYstrcpy(lbl.baseLabel,"Key");
+//	keyTextAppend();
+//	lbl.color=fntColor;
+//	lbl.bgColor=bgColor;
+//	lbl.bgWidth=bgWidth;
+//	lbl.bgHeight=bgHeight;
+//	return lbl;
+//}
+//
+//chordText chordText_get(uint16_t x, uint16_t y, uint16_t bgWidth,
+//		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
+//{
+//	chordText lbl;
+//	lbl.x=x;
+//	lbl.y=y;
+//	MYstrcpy(lbl.baseLabel,"Chord");
+//	chordTextAppend();
+//	lbl.color=fntColor;
+//	lbl.bgColor=bgColor;
+//	lbl.bgWidth=bgWidth;
+//	lbl.bgHeight=bgHeight;
+//	return lbl;
+//}
+//
+//keyTypeText keyTypeText_get(uint16_t x, uint16_t y, uint16_t bgWidth,
+//		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
+//{
+//	scaleType lbl;
+//	lbl.x=x;
+//	lbl.y=y;
+//	MYstrcpy(lbl.baseLabel,"Type");
+//	scaleTypeAppend();
+//	lbl.color=fntColor;
+//	lbl.bgColor=bgColor;
+//	lbl.bgWidth=bgWidth;
+//	lbl.bgHeight=bgHeight;
+//	return lbl;
+//}

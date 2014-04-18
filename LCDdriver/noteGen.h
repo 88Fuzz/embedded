@@ -1,28 +1,39 @@
-#include <stdint.h>
-
 #ifndef NOTEGEN_H_
 #define NOTEGEN_H_
 
+#include <stdint.h>
+#include "driverlib/uart.h"
+
+//key gen defines
 #define NUMOCTAVES 5
 #define SCALESIZE 7
 #define SCALEACCISIZE 7
 #define SCALEMAX NUMOCTAVES*8
 #define SCALEACCIMAX NUMOCTAVES*7
 #define LOWESTNOTE 24
+
+//MIDI message defines
 #define NOTEON 0x90
 #define NOTEOFF 0x80
-#define OCTAVEACCIBUTTONOFF 24
-#define OCTAVEBUTTONOFF 32
+
+
+#define SENDNOTEON_ALL(note,vel) \
+	SENDNOTEON_MIDI(note,vel); \
+	SENDNOTEON_MICRO(note);
+
+#define SENDNOTEOFF_ALL(note,vel) \
+	SENDNOTEOFF_MIDI(note,vel); \
+	SENDNOTEOFF_MICRO(note);
 
 #define SENDNOTEON_MIDI(note,vel) \
-	UARTCharPutNonBlocking(UART1_BASE, NOTEON); \
-	UARTCharPutNonBlocking(UART1_BASE,note); \
-	UARTCharPutNonBlocking(UART1_BASE, vel);
+	UARTCharPutNonBlocking(UART0_BASE, NOTEON); \
+	UARTCharPutNonBlocking(UART0_BASE,note); \
+	UARTCharPutNonBlocking(UART0_BASE, vel);
 
 #define SENDNOTEOFF_MIDI(note,vel) \
-	UARTCharPutNonBlocking(UART1_BASE, NOTEOFF); \
-	UARTCharPutNonBlocking(UART1_BASE, note); \
-	UARTCharPutNonBlocking(UART1_BASE, vel);
+	UARTCharPutNonBlocking(UART0_BASE, NOTEOFF); \
+	UARTCharPutNonBlocking(UART0_BASE, note); \
+	UARTCharPutNonBlocking(UART0_BASE, vel);
 
 #define SENDNOTEON_MICRO(note) \
 		SSIDataPut(SSI0_BASE,(note-LOWESTNOTE));
