@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "parameters.h"
+#include "comm.h"
 
 #define	 MICRO_ATTACK 			0x03
 #define MICRO_HOLD				0x04
@@ -10,6 +11,9 @@
 #define MICRO_FILTER_TYPE		0x09
 #define MICRO_WAVETYPE			0x0A
 #define MICRO_VOLUME			0x0B
+
+filter_t g_filterType;
+wave_t g_waveType;
 
 //Attack
 uint8_t g_attack;

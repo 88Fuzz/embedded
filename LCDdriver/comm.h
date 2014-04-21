@@ -1,25 +1,61 @@
 #ifndef COMM_H_
 #define COMM_H_
+/****************************************************************************
+*****************************************************************************
+****************************AUDIO COMMANDS***********************************
+*****************************************************************************
+*****************************************************************************
 
-//MIDI message defines
-#define NOTEON 0x90
-#define NOTEOFF 0x80
+Commands are passed between the user input controller and audio controller via
+SPI communication. The Tiva C series microcontroller has a maximum SPI message
+size of 16 bits. Therefore, the first 4 bits will designate the command and
+following 12 bits will hold the data associated with the command.
 
-//MICRO commands
-#define MICRO_NOTEON			0x0
-#define MICRO_NOTEOFF			0x01
-#define MICRO_NOTEALLOFF		0x02
-#define	 MICRO_ATTACK 			0x03
-#define MICRO_HOLD				0x04
-#define MICRO_RELEASE			0x05
-#define MICRO_FILTER_COURSE		0x06
-#define MICRO_FILTER_FINE		0x07
-#define MICRO_FILTER_Q			0x08
-#define MICRO_FILTER_TYPE		0x09
-#define MICRO_WAVETYPE			0x0A
-#define MICRO_VOLUME			0x0B
+Bit Position: 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+              |-command-| |---------data----------|
 
-#define MAXPARAMVAL				4095
+
+------------------------------Command Table----------------------------------
+
+Command Number          Command Type            Data Range
+
+0                       Note On                 0-82 (Midi 24-106)
+
+1                       Note Off                0-82 (Midi 24-106)
+
+2                       All Notes Off           none
+
+3                       Set Attack              0-4095 (0 is no attack time)
+
+4                       Set Hold                0-4095 (4095 is infinte sustain)
+
+5                       Set Release             0-4095
+
+6                       Filter Cutoff Course    0-4095
+
+7                       Filter Cutoff Fine      0-4095
+
+8                       Filter Q Factor         0-4095
+
+9                       Filter Type             0-2 (0: low, 1: high, 2: band)
+
+10                      Waveform Type           0-2 (0: sine, 1. saw, 2: square)
+
+11                      Output Volume           0-4095
+
+12
+
+13
+
+14
+
+15
+
+*****************************************************************************
+*****************************************************************************
+*****************************************************************************
+*****************************************************************************
+****************************************************************************/
 
 #define SENDNOTEON_ALL(note,vel) \
 	SENDNOTEON_MIDI(note,vel); \
@@ -47,6 +83,9 @@
 
 #define SENDALLNOTEOFF_MICRO() \
 		SSIDataPut(SSI0_BASE,(MICRO_NOTEALLOFF<<12));
+
+#define SENDCOMMAND_MICRO(cmd,val) \
+		SSIDataPut(SSI0_BASE,((cmd<<12)+(val)));
 
 
 

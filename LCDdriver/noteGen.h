@@ -2,6 +2,7 @@
 #define NOTEGEN_H_
 
 #include <stdint.h>
+#include "lcd.h"
 #include "driverlib/uart.h"
 
 //key gen defines
@@ -66,5 +67,6 @@ void initButtons();
 void genScale();
 void chordSelect();
 void sendAllNotesOff();
+void scanButtons();
 
 #endif /* NOTEGEN_H_ */

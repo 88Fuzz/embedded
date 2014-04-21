@@ -5,14 +5,26 @@
 #include "ra8875.h"
 #include "comm.h"
 
+
+slider g_sld1, g_sld2;
+xyGrid g_xy;
+text g_txtKey;
+text g_txtKeyType;
+text g_txtChord;
+text g_txtWaveform;
+text g_txtFilter;
+
 /*
  * given x,y,x label, and y label will return new xyGrid
  */
-xyGrid xyGrid_get(uint16_t x, uint16_t y, char* xStr, char* yStr)
+xyGrid xyGrid_get(uint16_t x, uint16_t y, char* xStr, uint8_t* xinitLevel, uint8_t xlevelID,
+				char* yStr, uint8_t* yinitLevel, uint8_t ylevelID)
 {
 	xyGrid grid;
-	grid.xlevel=0;
-	grid.ylevel=0;
+	grid.xlevel=xinitLevel;
+	grid.ylevel=yinitLevel;
+	grid.xlevelID=xlevelID;
+	grid.ylevelID=ylevelID;
 	grid.bgnd=rect_get(x,y,230,228,BLACK_16BIT);
 	grid.leftEdge=rect_get(x-9,y,8,237,g_backgroundColor);
 	grid.rightEdge=rect_get(x+grid.bgnd.width+1,y,9,237,g_backgroundColor);
@@ -48,10 +60,10 @@ bool xyGrid_isTouched(xyGrid *grid, uint16_t tx, uint16_t ty)
  */
 void xyGrid_updateDotPos(xyGrid *grid)
 {
-	grid->dot.x=(grid->bgnd.width*grid->xlevel/100)+grid->bgnd.x;//-grid->dot.radius;
+	grid->dot.x=(grid->bgnd.width**(grid->xlevel)/100)+grid->bgnd.x;//-grid->dot.radius;
 	//subtract from 100 because level 0 should be bottom of xy grid
 	//the bottom of the xygrid is where y is greater
-	grid->dot.y=(grid->bgnd.height*(100-grid->ylevel)/100)+grid->bgnd.y;//-grid->dot.radius;
+	grid->dot.y=(grid->bgnd.height*(100-*(grid->ylevel))/100)+grid->bgnd.y;//-grid->dot.radius;
 }
 
 /*
@@ -59,10 +71,10 @@ void xyGrid_updateDotPos(xyGrid *grid)
  */
 void xyGrid_updateLevels(xyGrid *grid, uint16_t tx, uint16_t ty)
 {
-	grid->xlevel=(tx-grid->bgnd.x)*100/grid->bgnd.width;
+	*grid->xlevel=(tx-grid->bgnd.x)*100/grid->bgnd.width;
 	//subtract from 100 because level 0 should be bottom of xy grid
 	//the bottom of the xygrid is where y is greater
-	grid->ylevel=100-((ty-grid->bgnd.y)*100/grid->bgnd.height);
+	*grid->ylevel=100-((ty-grid->bgnd.y)*100/grid->bgnd.height);
 }
 
 /*
@@ -78,8 +90,8 @@ void xyGrid_draw(xyGrid *grid)
 {
 	MYstrcpy(grid->xPrintLabel,grid->xlabel.label);
 	MYstrcpy(grid->yPrintLabel,grid->ylabel.label);
-	strAppendInt(grid->xPrintLabel,grid->xlevel);
-	strAppendInt(grid->yPrintLabel,grid->ylevel);
+	strAppendInt(grid->xPrintLabel,*grid->xlevel);
+	strAppendInt(grid->yPrintLabel,*grid->ylevel);
 
 	rect_draw(&grid->bgnd);
 	circle_draw(&grid->dot);
@@ -115,7 +127,7 @@ slider slider_get(uint16_t x, uint16_t y, char *str, uint8_t *initLevel, uint8_t
  */
 void slider_updateSlidePos(slider *sldr)
 {
-	sldr->slide.y=(sldr->track.height**(sldr->level)/100)+sldr->track.y-sldr->slide.height/2;
+	sldr->slide.y=(sldr->track.height*(100-*(sldr->level))/100)+sldr->track.y-sldr->slide.height/2;
 }
 
 /*
@@ -125,11 +137,13 @@ void slider_updateLevel(slider *sldr, uint16_t ty)
 {
 	//touch is higher than the track(assume 100%)
 	if(ty<sldr->track.y)
-		sldr->level=0;
+		*(sldr->level)=0;
 	else if(ty>sldr->track.y+sldr->track.height)
 		*(sldr->level)=100;
 	else
 		*(sldr->level)=(ty-sldr->track.y)*100/sldr->track.height;
+
+	*(sldr->level)=100-*(sldr->level);
 }
 
 /*
@@ -162,7 +176,7 @@ bool slider_isTouched(slider *sldr, uint16_t tx, uint16_t ty)
 void slider_draw(slider *sldr)
 {
 	MYstrcpy(sldr->printLabel,sldr->label.label);
-	strAppendInt(sldr->printLabel,100-*(sldr->level));
+	strAppendInt(sldr->printLabel,*(sldr->level));
 
 	rect_draw(&sldr->bgnd);
 	rect_draw(&sldr->track);
@@ -201,23 +215,6 @@ text text_get(uint16_t x, uint16_t y, char *str, uint16_t bgWidth,
 		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
 {
 	text lbl;
-	lbl.x=x;
-	lbl.y=y;
-	MYstrcpy(lbl.label,str);
-	lbl.color=fntColor;
-	lbl.bgColor=bgColor;
-	lbl.bgWidth=bgWidth;
-	lbl.bgHeight=bgHeight;
-	return lbl;
-}
-
-/*
- * returns a label ptr x, y, text, and color
- */
-textPtr textPtr_get(uint16_t x, uint16_t y, char *str, uint16_t bgWidth,
-		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
-{
-	textPtr lbl;
 	lbl.x=x;
 	lbl.y=y;
 	MYstrcpy(lbl.label,str);

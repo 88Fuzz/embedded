@@ -7,12 +7,13 @@
 #define ONEHUNDRED_MILISEC 2667000
 #define FIVEHUNDRED_MILISEC 13333340
 
-extern text g_txtKey;
-extern text g_txtKeyType;
-extern text g_txtChord;
 extern uint8_t g_keyChange;
 extern LCDscreen ra8875;
 extern uint16_t g_backgroundColor;
+extern uint8_t g_sld1Updated;
+extern uint8_t g_sld2Updated;
+extern uint8_t g_gridUpdated;
+
 
 void Timer0IntHandler();
 
@@ -20,10 +21,11 @@ void flushSSIFIFO(uint32_t);
 void mySSIDataPut(uint32_t , uint32_t);
 void MYstrcpy(char *, char*);
 void strAppendInt(char *, uint8_t);
-void scanButtons();
 
 void keyTypeAppend();
 void chordTextAppend();
 void keyTextAppend();
+void waveTextAppend();
+void filterTextAppend();
 
 #endif /* MYFUNCS_H_ */

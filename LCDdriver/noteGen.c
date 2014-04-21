@@ -15,6 +15,7 @@
 #include "noteGen.h"
 #include "util.h"
 #include "comm.h"
+#include "parameters.h"
 
 
 note g_scale[SCALESIZE];
@@ -237,6 +238,318 @@ void sendAllNotesOff()
 		{
 			SENDNOTEOFF_MIDI(g_octavesAcci[j].midi,0x00);
 			g_octavesAcci[j].state=OFF;
+		}
+	}
+}
+
+
+
+
+
+
+void scanButtons()
+{
+	uint32_t tmp;
+	uint16_t scanData, shiftData;
+	uint8_t j,k,acciOff,baseAcciOff,baseOctOff,octOff;
+	flushSSIFIFO(SSI1_BASE);
+	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
+	SysCtlDelay(250);
+	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0xFF);
+	SysCtlDelay(250);
+
+	//load 7 sets of 16 buttons
+	for(j=0;j<7;j++)
+	{
+		SSIDataPut(SSI1_BASE,0);//load 16 bits of data
+		SysCtlDelay(250);
+	}
+
+	//should run 7 times. We will have problems if it doesn't
+	for(j=0;j<7;j++)
+	{
+		//turn on led if not scanning all the buttons
+		if((SSIDataGetNonBlocking(SSI1_BASE,&tmp))==0)
+			GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0xFF);
+		else
+			GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, 0);
+
+		scanData=(uint32_t)tmp;
+
+		if(j==0)
+		{
+			//loop through all 16 bits of scanned data
+			for(k=0;k<16;k++)
+			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
+				//if k is in the top 8 bits, it is a chord select button
+				if(k<8)
+				{
+					if(shiftData)
+					{
+						if(k==0)
+						{
+							if(g_chord!=FIRST)
+								g_keyChange=1;
+							g_chord=FIRST;
+						}
+						else if(k==1)
+						{
+							if(g_chord!=SECOND)
+								g_keyChange=1;
+							g_chord=SECOND;
+						}
+						else if(k==2)
+						{
+							if(g_chord!=THIRD)
+								g_keyChange=1;
+							g_chord=THIRD;
+						}
+						else if(k==3)
+						{
+							if(g_chord!=FOURTH)
+								g_keyChange=1;
+							g_chord=FOURTH;
+						}
+						else if(k==4)
+						{
+							if(g_chord!=FIFTH)
+								g_keyChange=1;
+							g_chord=FIFTH;
+						}
+						else if(k==5)
+						{
+							if(g_chord!=SIXTH)
+								g_keyChange=1;
+							g_chord=SIXTH;
+						}
+						else if(k==6)
+						{
+							if(g_chord!=SEVENTH)
+								g_keyChange=1;
+							g_chord=SEVENTH;
+						}
+					}
+				}
+				else
+				{
+					if(shiftData)
+					{
+						if(k==8)
+						{
+							if(g_key!=Cs)
+								g_keyChange=1;
+							g_key=Cs;
+						}
+						else if(k==9)
+						{
+							if(g_key!=Ds)
+								g_keyChange=1;
+							g_key=Ds;
+						}
+						else if(k==10)
+						{
+							if(g_keyType!=MAJOR)
+								g_keyChange=1;
+							g_keyType=MAJOR;
+						}
+						else if(k==11)
+						{
+							if(g_keyType!=MINOR)
+								g_keyChange=1;
+							g_keyType=MINOR;
+						}
+						else if(k==12)
+						{
+							if(g_key!=As)
+								g_keyChange=1;
+							g_key=As;
+						}
+						else if(k==13)
+						{
+							if(g_key!=Fs)
+								g_keyChange=1;
+							g_key=Fs;
+						}
+						else if(k==14)
+						{
+							if(g_key!=Gs)
+								g_keyChange=1;
+							g_key=Gs;
+						}
+					}
+				}
+			}
+		}
+		else if(j==1)
+		{
+			baseAcciOff=28;
+			for(k=0;k<16;k++)
+			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
+
+				//if we are now scanning note buttons, change scale/octaves if needed
+				if(k==8 && g_keyChange)
+				{
+					sendAllNotesOff();
+					genScale();
+					chordSelect();
+				}
+
+				if(k<8)
+				{
+					if(shiftData)
+					{
+						if(k==0)
+						{
+							if(g_key!=C)
+								g_keyChange=1;
+							g_key=C;
+						}
+						else if(k==1)
+						{
+							if(g_key!=D)
+								g_keyChange=1;
+							g_key=D;
+						}
+						else if(k==2)
+						{
+							if(g_key!=E)
+								g_keyChange=1;
+							g_key=E;
+						}
+						else if(k==3)
+						{
+							if(g_key!=F)
+								g_keyChange=1;
+							g_key=F;
+						}
+						else if(k==4)
+						{
+							if(g_key!=G)
+								g_keyChange=1;
+							g_key=G;
+						}
+						else if(k==5)
+						{
+							if(g_key!=A)
+								g_keyChange=1;
+							g_key=A;
+						}
+						else if(k==6)
+						{
+							if(g_key!=B)
+								g_keyChange=1;
+							g_key=B;
+						}
+					}
+				}
+				else
+				{
+					acciOff=baseAcciOff+(k-8);
+					if(shiftData)
+					{
+						if(g_octavesAcci[acciOff].state==OFF &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=ON;
+							SENDNOTEON_ALL(g_octavesAcci[acciOff].midi,0x7F);
+						}
+					}
+					else
+					{
+						if(g_octavesAcci[acciOff].state==ON &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=OFF;
+							SENDNOTEOFF_ALL(g_octavesAcci[acciOff].midi,0x7F);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			//I could figure out math to do this, but I don't feel like it
+			if(j==2)
+			{
+				baseOctOff=32;
+				baseAcciOff=21;
+			}
+			else if(j==3)
+			{
+				baseOctOff=24;
+				baseAcciOff=14;
+			}
+			else if(j==4)
+			{
+				baseOctOff=16;
+				baseAcciOff=7;
+			}
+			else if(j==5)
+			{
+				baseOctOff=8;
+				baseAcciOff=0;
+			}
+			else
+			{
+				baseOctOff=0;
+				baseAcciOff=0;
+			}
+
+			for(k=0;k<16;k++)
+			{
+				shiftData=15-k;
+				shiftData=0x01<<shiftData;
+				shiftData=(scanData & shiftData);
+
+				if(k<8)
+				{
+					octOff=baseOctOff+k;
+					if(shiftData)
+					{
+						if(g_octaves[octOff].state==OFF)
+						{
+							g_octaves[octOff].state=ON;
+							SENDNOTEON_ALL(g_octaves[octOff].midi,0x7F);
+						}
+					}
+					else
+					{
+						if(g_octaves[octOff].state==ON)
+						{
+							g_octaves[octOff].state=OFF;
+							SENDNOTEOFF_ALL(g_octaves[octOff].midi,0x7F);
+						}
+					}
+				}
+				else if(j!=6 && k!=15)
+				{
+					acciOff=baseAcciOff+(k-8);
+					if(shiftData)
+					{
+						if(g_octavesAcci[acciOff].state==OFF &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=ON;
+							SENDNOTEON_ALL(g_octavesAcci[acciOff].midi,0x7F);
+						}
+					}
+					else
+					{
+						if(g_octavesAcci[acciOff].state==ON &&
+								g_octavesAcci[acciOff].midi>0)
+						{
+							g_octavesAcci[acciOff].state=OFF;
+							SENDNOTEOFF_ALL(g_octavesAcci[acciOff].midi,0x7F);
+						}
+					}
+				}
+			}
 		}
 	}
 }

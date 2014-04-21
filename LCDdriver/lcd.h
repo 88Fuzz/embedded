@@ -44,19 +44,8 @@ typedef struct
 	uint16_t bgColor;
 	uint16_t bgWidth;
 	uint16_t bgHeight;
-	char label[13];//max 12 characters, 8 for sliders
+	char label[14];//max 12 characters, 8 for sliders
 } text;
-
-typedef struct
-{
-	uint16_t x;
-	uint16_t y;
-	uint16_t color;
-	uint16_t bgColor;
-	uint16_t bgWidth;
-	uint16_t bgHeight;
-	char *label;//max 12 characters, 8 for sliders
-} textPtr;
 
 typedef struct
 {
@@ -77,15 +66,27 @@ typedef struct
 	rect rightEdge;
 	rect bottomEdge;
 	circle dot;
-	uint8_t xlevel;
-	uint8_t ylevel;
+	uint8_t *xlevel;
+	uint8_t xlevelID;
+	uint8_t *ylevel;
+	uint8_t ylevelID;
 	text xlabel;
 	text ylabel;
 	char xPrintLabel[13];
 	char yPrintLabel[13];
 } xyGrid;
 
-xyGrid xyGrid_get(uint16_t, uint16_t, char*, char*);
+extern slider g_sld1, g_sld2;
+extern xyGrid g_xy;
+extern text g_txtKey;
+extern text g_txtKeyType;
+extern text g_txtChord;
+extern text g_txtWaveform;
+extern text g_txtFilter;
+
+
+xyGrid xyGrid_get(uint16_t, uint16_t, char*, uint8_t*, uint8_t,
+				char*, uint8_t*, uint8_t);
 bool xyGrid_isTouched(xyGrid*, uint16_t, uint16_t);
 void xyGrid_updateDotPos(xyGrid *);
 void xyGrid_updateLevels(xyGrid *, uint16_t, uint16_t);
@@ -113,18 +114,5 @@ text text_get(uint16_t, uint16_t, char *, uint16_t,
 		uint16_t, uint16_t, uint16_t);
 void text_drawVal(text *,char *);
 void text_draw(text *);
-
-textPtr textPtr_get(uint16_t, uint16_t, char *, uint16_t,
-		uint16_t, uint16_t, uint16_t);
-
-////special text functions
-//keyText text_get(uint16_t, uint16_t, char *, uint16_t,
-//		uint16_t, uint16_t, uint16_t);
-//
-//chordText text_get(uint16_t, uint16_t, char *, uint16_t,
-//		uint16_t, uint16_t, uint16_t);
-//
-//keyTypeText text_get(uint16_t, uint16_t, char *, uint16_t,
-//		uint16_t, uint16_t, uint16_t);
 
 #endif
