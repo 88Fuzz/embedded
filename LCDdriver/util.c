@@ -20,6 +20,7 @@ uint8_t g_keyChange;
 uint8_t g_sld1Updated;
 uint8_t g_sld2Updated;
 uint8_t g_gridUpdated;
+uint8_t g_waveUpdated;
 
 /*
  * empties the SSI FIFO of SSIbase
@@ -54,6 +55,37 @@ void MYstrcpy(char *dest, char *src)
 	while(*src!='\0')
 		*dest++=*src++;
 	*dest='\0';
+}
+
+void updateWave()
+{
+	if(g_waveType==SINE)
+	{
+		g_txtWaveSine.selected=1;
+		g_txtWaveSquare.selected=0;
+		g_txtWaveTriangle.selected=0;
+		text_drawSelected(&g_txtWaveSine);
+		text_drawSelected(&g_txtWaveSquare);
+		text_drawSelected(&g_txtWaveTriangle);
+	}
+	else if(g_waveType==SQUARE)
+	{
+		g_txtWaveSine.selected=0;
+		g_txtWaveSquare.selected=1;
+		g_txtWaveTriangle.selected=0;
+		text_drawSelected(&g_txtWaveSine);
+		text_drawSelected(&g_txtWaveSquare);
+		text_drawSelected(&g_txtWaveTriangle);
+	}
+	else
+	{
+		g_txtWaveSine.selected=0;
+		g_txtWaveSquare.selected=0;
+		g_txtWaveTriangle.selected=1;
+		text_drawSelected(&g_txtWaveSine);
+		text_drawSelected(&g_txtWaveSquare);
+		text_drawSelected(&g_txtWaveTriangle);
+	}
 }
 
 /*

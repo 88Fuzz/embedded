@@ -45,6 +45,7 @@ int main()
 	g_changeLCD=0;
 	g_stateLCD=AUDIO;
 	g_backgroundColorOptions=BLUE_16BIT;
+	g_waveUpdated=0;
 
 				/*CODE TO GET SSI1 WORKING*/
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1/*SYSCTL_PERIPH_SSI0*/);
@@ -212,26 +213,23 @@ int main()
 	SysCtlDelay(FIVEHUNDRED_MILISEC);
 	SysCtlDelay(FIVEHUNDRED_MILISEC);
 
-/*	SysCtlDelay(FIVEHUNDRED_MILISEC);
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
 
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
-
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
-	SysCtlDelay(FIVEHUNDRED_MILISEC);
-*/
-
+	//init AUDIO LCD
 	g_sld1=slider_get(10,35,g_volumeLabel,&g_volumeLevel,MICRO_VOLUME);
 	g_sld2=slider_get(120,35,g_filterCourseLabel,&g_filterCourse,MICRO_FILTER_COURSE);//"Test 2");
 	g_xy=xyGrid_get(230,35, g_filterFineLabel, &g_filterFine, MICRO_FILTER_FINE,
 			g_filterQLabel, &g_filterQ, MICRO_FILTER_Q);
-	g_txtKey=text_get(10,0,"Key: C", 75,15,WHITE_16BIT,g_backgroundColor);
-	g_txtKeyType=text_get(75,0,"Type: Major", 100,15,WHITE_16BIT,g_backgroundColor);
-	g_txtChord=text_get(175,0,"Chord: I", 95, 15, WHITE_16BIT, g_backgroundColor);
-	g_txtWaveform=text_get(270,0,"Wave: Saw",90,15,WHITE_16BIT,g_backgroundColor);
-	g_txtFilter=text_get(360, 0,"Filter: Low",100,15,WHITE_16BIT,g_backgroundColor);
+	g_txtKey=text_get(10,0,"Key: C", 75,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtKeyType=text_get(75,0,"Type: Major", 100,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtChord=text_get(175,0,"Chord: I", 95, 15, WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtWaveform=text_get(270,0,"Wave: Saw",90,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtFilter=text_get(360, 0,"Filter: Low",100,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
 
+	//init OPTIONS LCD
+	g_txtWaveHeader=text_get(5,0,"Waveform", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveSine=text_get(5,30,"Sine", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveSquare=text_get(5,65,"Square", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveTriangle=text_get(5,100,"Triangle", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
 
 
 	touchEnable(true);
@@ -250,7 +248,6 @@ int main()
 
 	while(1)
 	{
-
 		if(g_changeLCD && !g_pChangeLCD)
 		{
 			if(g_stateLCD==OPTIONS)
@@ -269,6 +266,10 @@ int main()
 			else
 			{
 				fillScreen(g_backgroundColorOptions);
+				text_drawSelected(&g_txtWaveHeader);
+				text_drawSelected(&g_txtWaveSine);
+				text_drawSelected(&g_txtWaveSquare);
+				text_drawSelected(&g_txtWaveTriangle);
 				g_stateLCD=OPTIONS;
 			}
 		}
@@ -337,6 +338,27 @@ int main()
 						g_gridUpdated=1;
 					}
 				}
+				else
+				{
+					if(text_isTouched(&g_txtWaveSine,tx,ty))
+					{
+						g_waveType=SINE;
+						updateWave();
+						g_waveUpdated=1;
+					}
+					else if(text_isTouched(&g_txtWaveSquare,tx,ty))
+					{
+						g_waveType=SQUARE;
+						updateWave();
+						g_waveUpdated=1;
+					}
+					else if(text_isTouched(&g_txtWaveTriangle,tx,ty))
+					{
+						g_waveType=SAW;
+						updateWave();
+						g_waveUpdated=1;
+					}
+				}
 			}
 		}
 		if(g_keyChange && g_stateLCD==AUDIO)
@@ -375,5 +397,10 @@ void Timer0IntHandler()
 		g_gridUpdated=0;
 		SENDCOMMAND_MICRO(g_xy.xlevelID,*(g_xy.xlevel)*MAXPARAMVAL/100);
 		SENDCOMMAND_MICRO(g_xy.ylevelID,*(g_xy.ylevel)*MAXPARAMVAL/100);
+	}
+
+	if(g_waveUpdated)
+	{
+		SENDCOMMAND_MICRO(MICRO_WAVETYPE,g_waveType);
 	}
 }

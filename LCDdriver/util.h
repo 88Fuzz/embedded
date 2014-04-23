@@ -13,9 +13,12 @@ extern uint16_t g_backgroundColor;
 extern uint8_t g_sld1Updated;
 extern uint8_t g_sld2Updated;
 extern uint8_t g_gridUpdated;
+extern uint8_t g_waveUpdated;
 
 
 void Timer0IntHandler();
+
+void updateWave();
 
 void flushSSIFIFO(uint32_t);
 void mySSIDataPut(uint32_t , uint32_t);

@@ -47,9 +47,12 @@ typedef struct
 	uint16_t x;
 	uint16_t y;
 	uint16_t color;
+	uint16_t selColor;
 	uint16_t bgColor;
 	uint16_t bgWidth;
 	uint16_t bgHeight;
+	uint8_t size;
+	uint8_t selected;
 	char label[14];//max 12 characters, 8 for sliders
 } text;
 
@@ -93,6 +96,10 @@ extern uint8_t g_changeLCD;
 extern uint8_t g_pChangeLCD;
 extern stateLCD_t g_stateLCD;
 extern uint16_t g_backgroundColorOptions;
+extern text g_txtWaveHeader;
+extern text g_txtWaveSine;
+extern text g_txtWaveSquare;
+extern text g_txtWaveTriangle;
 
 
 xyGrid xyGrid_get(uint16_t, uint16_t, char*, uint8_t*, uint8_t,
@@ -121,8 +128,10 @@ void circle_draw(circle *);
 
 //text functions
 text text_get(uint16_t, uint16_t, char *, uint16_t,
-		uint16_t, uint16_t, uint16_t);
+		uint16_t, uint16_t, uint16_t, uint16_t, uint8_t, uint8_t);
 void text_drawVal(text *,char *);
 void text_draw(text *);
+void text_drawSelected(text *txt);
+bool text_isTouched(text *, uint16_t, uint16_t);
 
 #endif

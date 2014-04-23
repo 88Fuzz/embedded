@@ -13,6 +13,10 @@ text g_txtKeyType;
 text g_txtChord;
 text g_txtWaveform;
 text g_txtFilter;
+text g_txtWaveHeader;
+text g_txtWaveSine;
+text g_txtWaveSquare;
+text g_txtWaveTriangle;
 //if g_changeLCD is set, both major and minor have been pressed
 //and the LCD needs to change states
 uint8_t g_changeLCD;
@@ -40,9 +44,9 @@ xyGrid xyGrid_get(uint16_t x, uint16_t y, char* xStr, uint8_t* xinitLevel, uint8
 	grid.bottomEdge=rect_get(x,y+grid.bgnd.height+1,grid.bgnd.width,12,g_backgroundColor);
 	grid.dot=circle_get(x,y+grid.bgnd.height,5,WHITE_16BIT);
 	grid.xlabel=text_get(x, y-16, xStr, grid.bgnd.width/2,
-			15, WHITE_16BIT, g_backgroundColor);
+			15, WHITE_16BIT,WHITE_16BIT, g_backgroundColor,0,0);
 	grid.ylabel=text_get(x+grid.bgnd.width/2, y-16, yStr, grid.bgnd.width/2,
-			15, WHITE_16BIT, g_backgroundColor);
+			15, WHITE_16BIT,WHITE_16BIT, g_backgroundColor,0,0);
 
 	xyGrid_updateDotPos(&grid);
 	return grid;
@@ -122,7 +126,7 @@ slider slider_get(uint16_t x, uint16_t y, char *str, uint8_t *initLevel, uint8_t
 	sldr.level=initLevel;
 	sldr.levelID=levelID;
 	sldr.bgnd=rect_get(x,y,100,228,GREEN_16BIT);
-	sldr.label=text_get(x,y-15,str,sldr.bgnd.width,14,WHITE_16BIT,g_backgroundColor);
+	sldr.label=text_get(x,y-15,str,sldr.bgnd.width,14,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
 	sldr.track=rect_get(sldr.bgnd.x+45,sldr.bgnd.y+15,10,200, RED_16BIT);
 	sldr.slide=rect_get(sldr.bgnd.x+10,0,80,30,BLACK_16BIT);
 	sldr.bottomEdge=rect_get(x,y+sldr.bgnd.height,sldr.bgnd.width,12,g_backgroundColor);
@@ -221,17 +225,31 @@ void rect_draw(rect *rct)
  * returns a label given x, y, text, and color
  */
 text text_get(uint16_t x, uint16_t y, char *str, uint16_t bgWidth,
-		uint16_t bgHeight, uint16_t fntColor, uint16_t bgColor)
+		uint16_t bgHeight, uint16_t fntColor, uint16_t selColor,
+		uint16_t bgColor, uint8_t size, uint8_t selected)
 {
 	text lbl;
 	lbl.x=x;
 	lbl.y=y;
 	MYstrcpy(lbl.label,str);
 	lbl.color=fntColor;
+	lbl.selColor=selColor;
 	lbl.bgColor=bgColor;
 	lbl.bgWidth=bgWidth;
 	lbl.bgHeight=bgHeight;
+	lbl.selected=selected;
+	lbl.size=size;
 	return lbl;
+}
+
+bool text_isTouched(text *lbl, uint16_t tx, uint16_t ty)
+{
+	if(tx>lbl->x && tx<(lbl->x+lbl->bgWidth))
+	{
+		if(ty>lbl->y && ty<(lbl->y+lbl->bgHeight))
+			return true;
+	}
+	return false;
 }
 
 /*
@@ -255,9 +273,25 @@ void text_draw(text *txt)
 {
 	fillRect(txt->x,txt->y,txt->bgWidth,txt->bgHeight,txt->bgColor);
 	textMode();
-	textEnlarge(0);
+	textEnlarge(txt->size);
 	textSetCursor(txt->x,txt->y);
 	textTransparent(txt->color);
+	textWrite(txt->label);
+	graphicsMode();
+}
+
+void text_drawSelected(text *txt)
+{
+	fillRect(txt->x,txt->y,txt->bgWidth,txt->bgHeight,txt->bgColor);
+	textMode();
+	textEnlarge(txt->size);
+	textSetCursor(txt->x,txt->y);
+
+	if(txt->selected)
+		textTransparent(txt->selColor);
+	else
+		textTransparent(txt->color);
+
 	textWrite(txt->label);
 	graphicsMode();
 }
