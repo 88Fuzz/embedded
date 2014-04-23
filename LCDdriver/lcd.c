@@ -13,6 +13,15 @@ text g_txtKeyType;
 text g_txtChord;
 text g_txtWaveform;
 text g_txtFilter;
+//if g_changeLCD is set, both major and minor have been pressed
+//and the LCD needs to change states
+uint8_t g_changeLCD;
+//used to debounce the LCD change buttons
+uint8_t g_pChangeLCD;
+//g_stateLCD is the current mode of the LCD, option menu or audio menu
+stateLCD_t g_stateLCD;
+
+uint16_t g_backgroundColorOptions;
 
 /*
  * given x,y,x label, and y label will return new xyGrid

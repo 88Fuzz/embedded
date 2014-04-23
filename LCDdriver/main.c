@@ -42,6 +42,9 @@ int main()
 	g_gridUpdated=0;
 	g_filterType=LOW;
 	g_waveType=SAW;
+	g_changeLCD=0;
+	g_stateLCD=AUDIO;
+	g_backgroundColorOptions=BLUE_16BIT;
 
 				/*CODE TO GET SSI1 WORKING*/
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1/*SYSCTL_PERIPH_SSI0*/);
@@ -219,8 +222,6 @@ int main()
 	SysCtlDelay(FIVEHUNDRED_MILISEC);
 */
 
-	fillScreen(g_backgroundColor);
-
 	g_sld1=slider_get(10,35,g_volumeLabel,&g_volumeLevel,MICRO_VOLUME);
 	g_sld2=slider_get(120,35,g_filterCourseLabel,&g_filterCourse,MICRO_FILTER_COURSE);//"Test 2");
 	g_xy=xyGrid_get(230,35, g_filterFineLabel, &g_filterFine, MICRO_FILTER_FINE,
@@ -237,6 +238,7 @@ int main()
 	xScale=1024*10000/ra8875.width;
 	yScale=1024*10000/ra8875.height;
 
+	fillScreen(g_backgroundColor);
 	text_draw(&g_txtKey);
 	text_draw(&g_txtKeyType);
 	text_draw(&g_txtChord);
@@ -248,6 +250,28 @@ int main()
 
 	while(1)
 	{
+
+		if(g_changeLCD && !g_pChangeLCD)
+		{
+			if(g_stateLCD==OPTIONS)
+			{
+				fillScreen(g_backgroundColor);
+				text_draw(&g_txtKey);
+				text_draw(&g_txtKeyType);
+				text_draw(&g_txtChord);
+				text_draw(&g_txtWaveform);
+				text_draw(&g_txtFilter);
+				slider_draw(&g_sld1);
+				slider_draw(&g_sld2);
+				xyGrid_draw(&g_xy);
+				g_stateLCD=AUDIO;
+			}
+			else
+			{
+				fillScreen(g_backgroundColorOptions);
+				g_stateLCD=OPTIONS;
+			}
+		}
 		// Wait around for touch events
 		if (!GPIOPinRead(ra8875.base_rst, ra8875.touch_int))//digitalRead(RA8875_INT))
 		{
@@ -292,27 +316,30 @@ int main()
 				tx/=xScale;
 				ty/=yScale;
 
-				if(slider_isTouched(&g_sld1,tx,ty))
+				if(g_stateLCD==AUDIO)
 				{
-					slider_updateSlideLevel(&g_sld1, ty);
-					slider_draw(&g_sld1);
-					g_sld1Updated=1;
-				}
-				else if(slider_isTouched(&g_sld2,tx,ty))
-				{
-					slider_updateSlideLevel(&g_sld2, ty);
-					slider_draw(&g_sld2);
-					g_sld2Updated=1;
-				}
-				else if(xyGrid_isTouched(&g_xy,tx,ty))
-				{
-					xyGrid_updateDotLevels(&g_xy,tx,ty);
-					xyGrid_draw(&g_xy);
-					g_gridUpdated=1;
+					if(slider_isTouched(&g_sld1,tx,ty))
+					{
+						slider_updateSlideLevel(&g_sld1, ty);
+						slider_draw(&g_sld1);
+						g_sld1Updated=1;
+					}
+					else if(slider_isTouched(&g_sld2,tx,ty))
+					{
+						slider_updateSlideLevel(&g_sld2, ty);
+						slider_draw(&g_sld2);
+						g_sld2Updated=1;
+					}
+					else if(xyGrid_isTouched(&g_xy,tx,ty))
+					{
+						xyGrid_updateDotLevels(&g_xy,tx,ty);
+						xyGrid_draw(&g_xy);
+						g_gridUpdated=1;
+					}
 				}
 			}
 		}
-		if(g_keyChange)
+		if(g_keyChange && g_stateLCD==AUDIO)
 		{
 			g_keyChange=0;
 			keyTypeAppend();

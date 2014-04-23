@@ -251,12 +251,16 @@ void scanButtons()
 {
 	uint32_t tmp;
 	uint16_t scanData, shiftData;
-	uint8_t j,k,acciOff,baseAcciOff,baseOctOff,octOff;
+	uint8_t j,k,acciOff,baseAcciOff,
+			baseOctOff,octOff,majorPressed;
 	flushSSIFIFO(SSI1_BASE);
 	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
 	SysCtlDelay(250);
 	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0xFF);
 	SysCtlDelay(250);
+
+	//debounce YO
+	g_pChangeLCD=g_changeLCD;
 
 	//load 7 sets of 16 buttons
 	for(j=0;j<7;j++)
@@ -351,15 +355,23 @@ void scanButtons()
 						}
 						else if(k==10)
 						{
+							majorPressed=1;
+							g_changeLCD=0;
+
 							if(g_keyType!=MAJOR)
 								g_keyChange=1;
 							g_keyType=MAJOR;
 						}
 						else if(k==11)
 						{
-							if(g_keyType!=MINOR)
-								g_keyChange=1;
-							g_keyType=MINOR;
+							if(majorPressed)
+								g_changeLCD=1;
+							else
+							{
+								if(g_keyType!=MINOR)
+									g_keyChange=1;
+								g_keyType=MINOR;
+							}
 						}
 						else if(k==12)
 						{
@@ -446,6 +458,8 @@ void scanButtons()
 								g_keyChange=1;
 							g_key=B;
 						}
+						g_keyType=MAJOR;
+						g_chord=FIRST;
 					}
 				}
 				else

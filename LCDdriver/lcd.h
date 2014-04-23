@@ -8,6 +8,12 @@
 #define X_TOUCH_MID X_TOUCH_MAX/2
 #define Y_TOUCH_MID Y_TOUCH_MAX/2
 
+typedef enum
+{
+	AUDIO=0,
+	OPTIONS=1
+} stateLCD_t;
+
 typedef struct
 {
 	uint32_t /*GPIOcfg,*/ base_cs, base_rst,
@@ -83,6 +89,10 @@ extern text g_txtKeyType;
 extern text g_txtChord;
 extern text g_txtWaveform;
 extern text g_txtFilter;
+extern uint8_t g_changeLCD;
+extern uint8_t g_pChangeLCD;
+extern stateLCD_t g_stateLCD;
+extern uint16_t g_backgroundColorOptions;
 
 
 xyGrid xyGrid_get(uint16_t, uint16_t, char*, uint8_t*, uint8_t,
