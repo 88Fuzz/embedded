@@ -47,7 +47,6 @@ static uint32_t ui32OutSample = 0x00000000;
 static uint8_t* pui8SPITx;
 static uint32_t ui32SPIRx;
 static volatile uint8_t ui8State = 0;
-float tmp = 0;
 
 
 //*****************************************************************************
@@ -100,32 +99,39 @@ void Timer0IntHandler(void)
 		switch (ui32SPIRx & CMD_MASK)
 		{
 			case CMD_NOTE_ON:
-				tmp = NoteArrayNoteOn(ui32SPIRx+24);
+				NoteArrayNoteOn(ui32SPIRx & DATA_MASK);
 				break;
 			case CMD_NOTE_OFF:
-				ui32SPIRx &= DATA_MASK; 
-				NoteArrayNoteOff(ui32SPIRx+24);
+				NoteArrayNoteOff(ui32SPIRx & DATA_MASK);
 				break;
-			/*
 			case CMD_NOTE_ALL_OFF:
+				NoteArrayAllOff();
+				break;
+			/* 
 			case CMD_SET_ATTACK:
 			case CMD_SET_HOLD:
 			case CMD_SET_RELEASE:
+			*/
 			case CMD_SET_CUTOFF_COURSE:
-			case CMD_SET_CUTOFF_FINE:
-			case CMD_SET_Q:
-			*/ 
-			case CMD_SET_FILTER_TYPE:
-				ui32SPIRx &= DATA_MASK;
-				FilterSetOutput(ui32SPIRx);
+				FilterSetCutoffCourse(ui32SPIRx & DATA_MASK);
 				break;
-			case CMD_SET_WAVEFORM_TYPE:
-				ui32SPIRx &= DATA_MASK;
-				WaveTableSelect(ui32SPIRx);
+			case CMD_SET_CUTOFF_FINE:
+				FilterSetCutoffFine(ui32SPIRx & DATA_MASK);
+				break;
+			case CMD_SET_Q:
+				FilterSetDamping(ui32SPIRx & DATA_MASK);
+				break;
+			case CMD_SET_FILTER_TYPE:
+				FilterSetOutput(ui32SPIRx & DATA_MASK);
 				break;
 			/*
-			case CMD_SET_VOLUME:
+			case CMD_SET_WAVEFORM_TYPE:
+				WaveTableSelect(ui32SPIRx & DATA_MASK);
+				break;
 			*/
+			case CMD_SET_VOLUME:
+				SetVolume(ui32SPIRx & DATA_MASK);
+				break;
 			//default:
 				// do nothing
 		}
@@ -237,14 +243,19 @@ void InitializeSystem()
 	// system clock calculation: 400 MHz(PLL) / 2(system) / 2.5(divisor) = 80 MHz
 	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-	// configure FPU
+	/***********************************************
+	 peripheral initialization
+	***********************************************/
 	InitializeFPU();
-
-	// configure SPI peripheral
 	InitializeSPI();
-
-	// configure GPIO pins
 	InitializeGPIO();
+	
+	/***********************************************
+	 software initialization
+	***********************************************/
+	InitializeNoteArray();
+    InitializeFilter();
+    InitialzeVolume();
 }
 
 
@@ -253,23 +264,17 @@ void InitializeSystem()
 // main routine
 //
 //*****************************************************************************
-Note NoteArray[SIZE_NOTE_ARRAY];
-uint8_t ui8NoteCount;
-const float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.142, 0.125, 0.0625};
-
 int main(void)
 {
 	float fOutSample;
 	
 	InitializeSystem();
-	InitializeNoteArray();
-    InitializeFilter();
     
 	// start the timer module with interrupt
 	InitializeTimer();
 
 #ifdef DEBUG_SSI_OUTPUT
-	tmp = NoteArrayNoteOn(1);
+	NoteArrayNoteOn(2);
 #endif
 
 	ui8State = SAMPLE_PREPARE;
@@ -289,6 +294,7 @@ int main(void)
 		 preperation of sample for dac output
 		***********************************************/
         fOutSample *= 0.2;
+        fOutSample *= GetVolume();
         // DC offset to allow sample to rest between 0 and 3V
         fOutSample += 0.5;                                      
         // convert to fixed point

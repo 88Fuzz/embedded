@@ -16,12 +16,16 @@ const static float pfNoteAmplitudeScale[SIZE_NOTE_ARRAY + 1] = {0.0, 0.5, 0.333,
 
 static FilterParameters FilterParams;
 static const float fSampleRate = VALUE_SAMPLE_RATE;
-static const float fSampleRateDiv = 1.0 / ((float) VALUE_SAMPLE_RATE);
+static const float fSampleRateDiv = 1.0 / 48000;
 static const float fSizeLookupTable = 1024.0;
 static const float fPi = 3.14159265359;
 static const float fTwoPi = 2*3.14159265359;
+static const float fDataDivisor = 1.0 / 4095.0;
+static const float fFilterDivisorCourse = (1.0 / 4095.0) * 20000;
+static const float fFilterDivisorFine = (1.0 / 4095.0) * 4000;
 const float* pfWaveTable = pfSawtoothTable;
 
+static volatile float fVolume;
 
 //*****************************************************************************
 //
@@ -109,7 +113,7 @@ void NoteOn(Note* CurrentNote, float fFrequency)
 {
 	CurrentNote->ui8State = NOTE_ON;
 	CurrentNote->fFrequency = fFrequency;
-	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
+	CurrentNote->fIncrement = fSizeLookupTable * (fFrequency * fSampleRateDiv);
 }
 
 void NoteOff(Note* CurrentNote)
@@ -135,7 +139,7 @@ void NoteSet(Note* CurrentNote, float fFrequency)
  */
 {
 	CurrentNote->fFrequency = fFrequency;
-	CurrentNote->fIncrement = 1024.0 * (fFrequency * fSampleRateDiv);
+	CurrentNote->fIncrement = fSizeLookupTable * (fFrequency * fSampleRateDiv);
 }
 
 
@@ -177,35 +181,60 @@ float NoteArrayProcess()
 }
 
 
-float NoteArrayNoteOn(uint32_t ui32Data)
+void NoteArrayNoteOn(uint32_t ui32Data)
 {
-    uint16_t n;
+    uint16_t n = 0;
+    uint16_t m = SIZE_NOTE_ARRAY;
+    float fFrequency = pfNoteFrequency[ui32Data];
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
+	
 	if (NoteArray[n].ui8State == NOTE_OFF)
 	{
-	    NoteOn(&NoteArray[n],pfNoteFrequency[ui32Data]); 
-	    return NoteArray[n].fFrequency;
+	    // save position of off note for possibly switching on
+	    m = n;
+	}
+	else
+	{
+	    if (NoteArray[n].fFrequency == fFrequency) 
+	    {
+		// note is already on, no need to duplicate
+		return;
+	    }
 	}
     }
-    return 0.0;
+    
+    if (m != SIZE_NOTE_ARRAY)
+    {
+	NoteOn(&NoteArray[m], fFrequency); 
+    }
 }
 
 
 void NoteArrayNoteOff(uint32_t ui32Data)
 {
     uint16_t n;
-    float freq = pfNoteFrequency[ui32Data];
+    float fFrequency = pfNoteFrequency[ui32Data];
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
-	if (NoteArray[n].fFrequency == freq) 
+	if (NoteArray[n].fFrequency == fFrequency) 
 	{
 	    NoteOff(&NoteArray[n]); 
-	    break;
+	    //break;
 	}
     } 
+}
+
+void NoteArrayAllOff()
+{
+    uint16_t n;
+    
+    for (n = 0; n < SIZE_NOTE_ARRAY; n++)
+    {
+	NoteOff(&NoteArray[n]); 
+    }
 }
 
 
@@ -218,43 +247,66 @@ void NoteArrayNoteOff(uint32_t ui32Data)
 // reference: http://www.musicdsp.org/showone.php?id=142
 void InitializeFilter()
 {
-    // 2 * pi * fc / fs
-    FilterParams.fCutoff = fTwoPi * 20000 * fSampleRateDiv;
-    FilterParams.fDamping = 0.5;
+    // 2 * sin ( pi * F / Fs)
+    uint16_t ui16Index;
+    FilterParams.fFrequency = 2000.0;
+    ui16Index = (uint16_t) fPi * FilterParams.fFrequency * fSampleRateDiv * fSizeLookupTable;
+    FilterParams.fCutoff = 2 * pfSineTable[ui16Index];
+    // ranges 0.5 to inf
+    FilterParams.fDamping = 0.2;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
     FilterParams.fBand = 0.0;
     FilterParams.fNotch = 0.0;
-    FilterParams.fDelay[0] = 0;
-    FilterParams.fDelay[1] = 0;
-    FilterParams.pfOutput = &FilterParams.fLow;
+    FilterParams.fDelay[0] = 0.0;
+    FilterParams.fDelay[1] = 0.0;
+    FilterParams.pfOutput = &(FilterParams.fLow);
 }
 
-void FilterSetCutoff(float fCutoff)
+void FilterSetCutoffCourse(uint32_t ui32Data)
+/*
+ * TODO: cutoff
+ */ 
 {
-    FilterParams.fCutoff = fTwoPi * fCutoff * fSampleRateDiv;
+    FilterParams.fCutoff = fDataDivisor * ui32Data * 0.25;
+    FilterParams.fFrequency = FilterParams.fCutoff;
 }
 
-void FilterSetDamping(float fDamping)
+void FilterSetCutoffFine(uint32_t ui32Data)
+/*
+ * TODO: cutoff
+ */
 {
-    FilterParams.fDamping = fDamping;
+    FilterParams.fCutoff = FilterParams.fFrequency + fDataDivisor * ui32Data * 0.1;
+    /*
+    uint16_t ui16Index;
+    float fFrequency = FilterParams.fFrequency;
+    fFrequency = ui32Data * fDataDivisor * 0.1;
+    ui16Index = (uint16_t) fPi * fFrequency * fSampleRateDiv * fSizeLookupTable;
+    FilterParams.fCutoff = 2 * pfSineTable[ui16Index];
+    */
 }
 
-void FilterSetOutput(uint16_t ui16Type)
+void FilterSetDamping(uint32_t ui32Data)
 {
-    switch (ui16Type)
+    FilterParams.fDamping = fDataDivisor * ui32Data + 0.05;
+}
+
+void FilterSetOutput(uint32_t ui32Type)
+{
+    switch (ui32Type)
     {
 	case 0:
-	    FilterParams.pfOutput = &FilterParams.fLow;
+	    FilterParams.pfOutput = &(FilterParams.fLow);
 	    break;
 	case 1:
-	    FilterParams.pfOutput = &FilterParams.fBand;
+	    FilterParams.pfOutput = &(FilterParams.fBand);
 	    break;
 	case 2:
-	    FilterParams.pfOutput = &FilterParams.fHigh;
+	    FilterParams.pfOutput = &(FilterParams.fHigh);
 	    break;
 	default:
-	    FilterParams.pfOutput = &FilterParams.fLow;
+	    FilterParams.pfOutput = &(FilterParams.fLow);
     }
 }
 
@@ -288,5 +340,26 @@ float FilterProcess(float fInput)
     FilterParams.fDelay[0] = FilterParams.fBand;
     FilterParams.fDelay[1] = FilterParams.fLow;
     
-    return *(FilterParams.pfOutput);
+    //return *(FilterParams.pfOutput);
+    return FilterParams.fBand;
+}
+
+//*****************************************************************************
+//
+// Volume function definitions
+//
+//*****************************************************************************
+void InitialzeVolume()
+{
+    fVolume = 1.0;
+}
+
+void SetVolume(uint32_t ui32Data)
+{
+    fVolume = fDataDivisor * ((float) ui32Data);
+}
+
+float GetVolume()
+{
+    return fVolume;
 }

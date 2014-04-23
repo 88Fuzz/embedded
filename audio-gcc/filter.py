@@ -16,28 +16,29 @@ def SquareWave():
     py_plot_show()
 
 
+fCutoff = 1.97835302
+fDamping = 0.5
+fLow = 0.0
+fHigh = 0.0
+fBand = 0.0
+fDelay = [0.0, 0.0]
+
+def FilterProcess(inSample):
+    fLow = fDelay[1] + fCutoff * fDelay[0]
+    fHigh = fInput - fLow - fDamping * fDelay[0]
+    fBand = fCutoff * fHigh + fDelay[0]
+    fDelay[0] = fBand;
+    fDelay[1] = fLow;
+    return fLow
+
+
 if __name__ == "__main__":
 
     SquareWave()
     
-    fCutoff = pi * 1000 / 48000
-    fDamping = 1.0
-    fLow = 0.0
-    fHigh = 0.0
-    fBand = 0.0
-    fDelay = [0.0, 0.0]
 
     for n in range(0,len(Table)):
-        
-        fInput = Table[n]
-        
-        fLow = fDelay[1] + fCutoff * fDelay[0]
-        fHigh = fInput - fLow - fDamping * fDelay[0]
-        fBand = fCutoff * fHigh + fDelay[0]
-        fDelay[0] = fBand;
-        fDelay[1] = fLow;
-
-        Table[n] = fBand
+        Table[n] = FilterProcess(Table[n])
 
     py_plot(Table)
     py_plot_show()

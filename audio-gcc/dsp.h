@@ -31,7 +31,7 @@ typedef struct
 {
     uint8_t ui8State;		// on/off state of note
     uint16_t ui16Sample;	// output sample DAC
-    float fFrequency;		// note frequency
+    volatile float fFrequency;	// note frequency
     float fIncrement;
     float fPosition;		// wave table position
     float fSample;		// output sample float
@@ -40,15 +40,16 @@ typedef struct
 
 typedef struct
 {
-    float fCutoff;
-    float fDamping;
+    volatile float fFrequency;
+    volatile float fCutoff;
+    volatile float fDamping;
     float fLow;
     float fHigh;
     float fBand;
     float fNotch;
     float fDelay[2];
-    float* pfOutput;
-    uint8_t ui8Type;
+    volatile float* pfOutput;
+    volatile uint8_t ui8Type;
 }FilterParameters;
 
 
@@ -72,15 +73,21 @@ void SquareInitialize();
 void SawtoothInitialize();
 
 void InitializeFilter();
-void FilterSetCutoff(float fCutoff);
-void FilterSetDamping(float fDamping);
-void FilterSetOutput(uint16_t ui16Type);
+void FilterSetCutoffCourse(uint32_t ui32Data);
+void FilterSetCutoffFine(uint32_t ui32Data);
+void FilterSetDamping(uint32_t ui32Data);
+void FilterSetOutput(uint32_t ui32Data);
 float FilterProcess(float fInput);
 
 void InitializeNoteArray();
 float NoteArrayProcess();
-float NoteArrayNoteOn(uint32_t ui32Data);
+void NoteArrayNoteOn(uint32_t ui32Data);
 void NoteArrayNoteOff(uint32_t ui32Data);
+void NoteArrayAllOff();
+
+void InitialzeVolume();
+void SetVolume(uint32_t ui32Data);
+float GetVolume();
 
 
 #endif /* DSP_H_ */

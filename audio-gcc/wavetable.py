@@ -97,5 +97,5 @@ def NoteFrequency():
 if __name__ == "__main__":
     #SineWave()
     #SquareWave()
-    #SawtoothWave()
-    NoteFrequency()
+    SawtoothWave()
+    #NoteFrequency()
