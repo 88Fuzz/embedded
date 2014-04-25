@@ -21,6 +21,9 @@ uint8_t g_sld1Updated;
 uint8_t g_sld2Updated;
 uint8_t g_gridUpdated;
 uint8_t g_waveUpdated;
+uint8_t g_filterUpdated;
+uint8_t g_sld1UpdatedMenu;
+uint8_t g_sld2UpdatedMenu;
 
 /*
  * empties the SSI FIFO of SSIbase
@@ -248,9 +251,101 @@ void waveTextAppend()
 void filterTextAppend()
 {
 	if(g_filterType==LOW)
-		MYstrcpy(g_txtFilter.label,"Filter: LOW");
+		MYstrcpy(g_txtFilter.label,"Filter: Low");
 	else if(g_filterType==HIGH)
-		MYstrcpy(g_txtFilter.label,"Filter: HIGH");
+		MYstrcpy(g_txtFilter.label,"Filter: High");
 	else if(g_filterType==BAND)
-		MYstrcpy(g_txtFilter.label,"Filter: BAND");
+		MYstrcpy(g_txtFilter.label,"Filter: Band");
+}
+
+void updateFilter()
+{
+	g_txtFilterLow.selected=0;
+	g_txtFilterBand.selected=0;
+	g_txtFilterHigh.selected=0;
+
+	if(g_filterType==LOW)
+		g_txtFilterLow.selected=1;
+	else if(g_filterType==BAND)
+		g_txtFilterBand.selected=1;
+	else
+		g_txtFilterHigh.selected=1;
+
+	text_drawSelected(&g_txtFilterLow);
+	text_drawSelected(&g_txtFilterBand);
+	text_drawSelected(&g_txtFilterHigh);
+}
+
+void updateSld1()
+{
+	g_txtSld1Attack.selected=0;
+	g_txtSld1Hold.selected=0;
+	g_txtSld1Release.selected=0;
+	g_txtSld1FCourse.selected=0;
+	g_txtSld1FFine.selected=0;
+	g_txtSld1QFactor.selected=0;
+	g_txtSld1Volume.selected=0;
+
+	if(g_sld1.levelID==MICRO_ATTACK)
+		g_txtSld1Attack.selected=1;
+	else if(g_sld1.levelID==MICRO_HOLD)
+		g_txtSld1Hold.selected=1;
+	else if(g_sld1.levelID==MICRO_RELEASE)
+		g_txtSld1Release.selected=1;
+	else if(g_sld1.levelID==MICRO_FILTER_COURSE)
+		g_txtSld1FCourse.selected=1;
+	else if(g_sld1.levelID==MICRO_FILTER_FINE)
+		g_txtSld1FFine.selected=1;
+	else if(g_sld1.levelID==MICRO_FILTER_Q)
+		g_txtSld1QFactor.selected=1;
+	else if(g_sld1.levelID==MICRO_VOLUME)
+		g_txtSld1Volume.selected=1;
+
+	text_drawSelected(&g_txtSld1Header);
+	text_drawSelected(&g_txtSld1Attack);
+	text_drawSelected(&g_txtSld1Hold);
+	text_drawSelected(&g_txtSld1Release);
+	text_drawSelected(&g_txtSld1FCourse);
+	text_drawSelected(&g_txtSld1FFine);
+	text_drawSelected(&g_txtSld1QFactor);
+	text_drawSelected(&g_txtSld1Volume);
+
+	slider_updateSlidePos(&g_sld1);
+}
+
+void updateSld2()
+{
+	g_txtSld2Attack.selected=0;
+	g_txtSld2Hold.selected=0;
+	g_txtSld2Release.selected=0;
+	g_txtSld2FCourse.selected=0;
+	g_txtSld2FFine.selected=0;
+	g_txtSld2QFactor.selected=0;
+	g_txtSld2Volume.selected=0;
+
+	if(g_sld2.levelID==MICRO_ATTACK)
+		g_txtSld2Attack.selected=1;
+	else if(g_sld2.levelID==MICRO_HOLD)
+		g_txtSld2Hold.selected=1;
+	else if(g_sld2.levelID==MICRO_RELEASE)
+		g_txtSld2Release.selected=1;
+	else if(g_sld2.levelID==MICRO_FILTER_COURSE)
+		g_txtSld2FCourse.selected=1;
+	else if(g_sld2.levelID==MICRO_FILTER_FINE)
+		g_txtSld2FFine.selected=1;
+	else if(g_sld2.levelID==MICRO_FILTER_Q)
+		g_txtSld2QFactor.selected=1;
+	else if(g_sld2.levelID==MICRO_VOLUME)
+		g_txtSld2Volume.selected=1;
+
+	text_drawSelected(&g_txtSld2Header);
+	text_drawSelected(&g_txtSld2Attack);
+	text_drawSelected(&g_txtSld2Hold);
+	text_drawSelected(&g_txtSld2Release);
+	text_drawSelected(&g_txtSld2FCourse);
+	text_drawSelected(&g_txtSld2FFine);
+	text_drawSelected(&g_txtSld2QFactor);
+	text_drawSelected(&g_txtSld2Volume);
+
+	slider_updateSlidePos(&g_sld2);
 }

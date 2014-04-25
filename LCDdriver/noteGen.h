@@ -11,7 +11,7 @@
 #define SCALEACCISIZE 7
 #define SCALEMAX NUMOCTAVES*8
 #define SCALEACCIMAX NUMOCTAVES*7
-#define LOWESTNOTE 24
+#define LOWESTNOTE 12
 
 typedef enum
 {

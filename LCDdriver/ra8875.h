@@ -135,6 +135,13 @@ void ra8875init(//uint32_t GPIOcfg,//SYSCTL_PERIPH_GPIOC
 #define WHITE_16BIT            0xFFFF
 #define ORANGE_16BIT           0xFC01
 
+#define U_16BIT				0x7C17
+#define S_16BIT				0x7C1F
+#define Y_16BIT				0x82A0//0x05EF//0x7FF7
+#define N_16BIT				0x7FFF
+#define T_16BIT				0x81F7
+#define H_16BIT				0x81FF
+
 // Command/Data pins for SPI
 #define RA8875_DATAWRITE        0x00
 #define RA8875_DATAREAD         0x40

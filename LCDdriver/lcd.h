@@ -100,6 +100,26 @@ extern text g_txtWaveHeader;
 extern text g_txtWaveSine;
 extern text g_txtWaveSquare;
 extern text g_txtWaveTriangle;
+extern text g_txtFilterHeader;
+extern text g_txtFilterLow;
+extern text g_txtFilterBand;
+extern text g_txtFilterHigh;
+extern text g_txtSld1Header;
+extern text g_txtSld1Attack;
+extern text g_txtSld1Hold;
+extern text g_txtSld1Release;
+extern text g_txtSld1FCourse;
+extern text g_txtSld1FFine;
+extern text g_txtSld1QFactor;
+extern text g_txtSld1Volume;
+extern text g_txtSld2Header;
+extern text g_txtSld2Attack;
+extern text g_txtSld2Hold;
+extern text g_txtSld2Release;
+extern text g_txtSld2FCourse;
+extern text g_txtSld2FFine;
+extern text g_txtSld2QFactor;
+extern text g_txtSld2Volume;
 
 
 xyGrid xyGrid_get(uint16_t, uint16_t, char*, uint8_t*, uint8_t,

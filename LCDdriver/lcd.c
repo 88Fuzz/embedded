@@ -13,10 +13,39 @@ text g_txtKeyType;
 text g_txtChord;
 text g_txtWaveform;
 text g_txtFilter;
+
+//OPTIONS: waveform
 text g_txtWaveHeader;
 text g_txtWaveSine;
 text g_txtWaveSquare;
 text g_txtWaveTriangle;
+
+//OPTIONS: filter
+text g_txtFilterHeader;
+text g_txtFilterLow;
+text g_txtFilterBand;
+text g_txtFilterHigh;
+
+//OPTIONS: slider1
+text g_txtSld1Header;
+text g_txtSld1Attack;
+text g_txtSld1Hold;
+text g_txtSld1Release;
+text g_txtSld1FCourse;
+text g_txtSld1FFine;
+text g_txtSld1QFactor;
+text g_txtSld1Volume;
+
+//OPTIONS: slider2
+text g_txtSld2Header;
+text g_txtSld2Attack;
+text g_txtSld2Hold;
+text g_txtSld2Release;
+text g_txtSld2FCourse;
+text g_txtSld2FFine;
+text g_txtSld2QFactor;
+text g_txtSld2Volume;
+
 //if g_changeLCD is set, both major and minor have been pressed
 //and the LCD needs to change states
 uint8_t g_changeLCD;

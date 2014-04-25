@@ -44,8 +44,11 @@ int main()
 	g_waveType=SAW;
 	g_changeLCD=0;
 	g_stateLCD=AUDIO;
-	g_backgroundColorOptions=BLUE_16BIT;
+	g_backgroundColorOptions=0x1C00;//BLUE_16BIT;
 	g_waveUpdated=0;
+	g_filterUpdated=0;
+	g_sld1UpdatedMenu=0;
+	g_sld2UpdatedMenu=0;
 
 				/*CODE TO GET SSI1 WORKING*/
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1/*SYSCTL_PERIPH_SSI0*/);
@@ -163,34 +166,35 @@ int main()
 	PWM1out(255);
 
 	//Draw logo while everything else loads. YO
-	fillScreen(BLACK_16BIT);
+	fillScreen(0x77EF);//0x3C00);
+
 	//u
-	fillRect5(0,26,2,13,WHITE_16BIT);
-	fillRect5(0,37,0xf,2,WHITE_16BIT);
-	fillRect5(0xd,26,2,21,WHITE_16BIT);
+	fillRect5(0,26,2,13,U_16BIT);
+	fillRect5(0,37,0xf,2,U_16BIT);
+	fillRect5(0xd,26,2,21,U_16BIT);
 	//S
-	fillRect5(0x10,13,0xf,2,WHITE_16BIT);
-	fillRect5(0x10,13,2,13,WHITE_16BIT);
-	fillRect5(0x10,24,0xf,2,WHITE_16BIT);
-	fillRect5(0x1d,24,2,15,WHITE_16BIT);
-	fillRect5(0x10,37,0xf,2,WHITE_16BIT);
+	fillRect5(0x10,13,0xf,2,S_16BIT);
+	fillRect5(0x10,13,2,13,S_16BIT);
+	fillRect5(0x10,24,0xf,2,S_16BIT);
+	fillRect5(0x1d,24,2,15,S_16BIT);
+	fillRect5(0x10,37,0xf,2,S_16BIT);
 	//y
-	fillRect5(0x20,26,2,13,WHITE_16BIT);
-	fillRect5(0x20,37,0xf,2,WHITE_16BIT);
-	fillRect5(0x2d,26,2,26,WHITE_16BIT);
-	fillRect5(0x20,50,0xf,2,WHITE_16BIT);
+	fillRect5(0x20,26,2,13,Y_16BIT);
+	fillRect5(0x20,37,0xf,2,Y_16BIT);
+	fillRect5(0x2d,26,2,26,Y_16BIT);
+	fillRect5(0x20,50,0xf,2,Y_16BIT);
 	//n
-	fillRect5(0x30,24,2,15,WHITE_16BIT);
-	fillRect5(0x30,26,0xf,2,WHITE_16BIT);
-	fillRect5(0x3d,26,2,13,WHITE_16BIT);
+	fillRect5(0x30,24,2,15,N_16BIT);
+	fillRect5(0x30,26,0xf,2,N_16BIT);
+	fillRect5(0x3d,26,2,13,N_16BIT);
 	//t
-	fillRect5(0x40,24,0xf,2,WHITE_16BIT);
-	fillRect5(0x46,13,2,26,WHITE_16BIT);
-	fillRect5(0x46,37,9,2,WHITE_16BIT);
+	fillRect5(0x40,24,0xf,2,T_16BIT);
+	fillRect5(0x46,13,2,26,T_16BIT);
+	fillRect5(0x46,37,9,2,T_16BIT);
 	//h
-	fillRect5(0x50,13,2,26,WHITE_16BIT);
-	fillRect5(0x50,24,0xf,2,WHITE_16BIT);
-	fillRect5(0x5d,24,2,15,WHITE_16BIT);
+	fillRect5(0x50,13,2,26,H_16BIT);
+	fillRect5(0x50,24,0xf,2,H_16BIT);
+	fillRect5(0x5d,24,2,15,H_16BIT);
 
 
 
@@ -219,18 +223,73 @@ int main()
 	g_sld2=slider_get(120,35,g_filterCourseLabel,&g_filterCourse,MICRO_FILTER_COURSE);//"Test 2");
 	g_xy=xyGrid_get(230,35, g_filterFineLabel, &g_filterFine, MICRO_FILTER_FINE,
 			g_filterQLabel, &g_filterQ, MICRO_FILTER_Q);
-	g_txtKey=text_get(10,0,"Key: C", 75,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
-	g_txtKeyType=text_get(75,0,"Type: Major", 100,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
-	g_txtChord=text_get(175,0,"Chord: I", 95, 15, WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
-	g_txtWaveform=text_get(270,0,"Wave: Saw",90,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
-	g_txtFilter=text_get(360, 0,"Filter: Low",100,15,WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtKey=text_get(10,0,"Key: C", 75,15,
+			WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtKeyType=text_get(75,0,"Type: Major", 100,15,
+			WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtChord=text_get(175,0,"Chord: I", 95, 15,
+			WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtWaveform=text_get(270,0,"Wave: Saw",90,15,
+			WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+	g_txtFilter=text_get(360, 0,"Filter: Low",100,15,
+			WHITE_16BIT,WHITE_16BIT,g_backgroundColor,0,0);
+
 
 	//init OPTIONS LCD
-	g_txtWaveHeader=text_get(5,0,"Waveform", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
-	g_txtWaveSine=text_get(5,30,"Sine", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
-	g_txtWaveSquare=text_get(5,65,"Square", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
-	g_txtWaveTriangle=text_get(5,100,"Triangle", 75,15,WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
+	g_txtWaveHeader=text_get(5,0,"Waveform", 75,15,
+			BLACK_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveSine=text_get(5,20,"Sine", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveSquare=text_get(5,55,"Square", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtWaveTriangle=text_get(5,90,"Triangle", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
 
+
+	g_txtFilterHeader=text_get(5,125,"Filter", 75,15,
+			BLACK_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtFilterLow=text_get(5,145,"Low", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
+	g_txtFilterBand=text_get(5,180,"Band", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtFilterHigh=text_get(5,215,"High", 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+
+
+	g_txtSld1Header=text_get(100,0,"Slider 1", 75,15,
+			BLACK_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1Attack=text_get(100,20,g_attackLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1Hold=text_get(100,55,g_holdLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1Release=text_get(100,90,g_releaseLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1FCourse=text_get(100,125,g_filterCourseLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1FFine=text_get(100,160,g_filterFineLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1QFactor=text_get(100,195,g_filterQLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld1Volume=text_get(100,230,g_volumeLabel, 75,15,
+				WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
+
+
+	g_txtSld2Header=text_get(200,0,"Slider 2", 75,15,
+			BLACK_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2Attack=text_get(200,20,g_attackLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2Hold=text_get(200,55,g_holdLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2Release=text_get(200,90,g_releaseLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2FCourse=text_get(200,125,g_filterCourseLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,1);
+	g_txtSld2FFine=text_get(200,160,g_filterFineLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2QFactor=text_get(200,195,g_filterQLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
+	g_txtSld2Volume=text_get(200,230,g_volumeLabel, 75,15,
+			WHITE_16BIT,MAGENTA_16BIT,g_backgroundColorOptions,0,0);
 
 	touchEnable(true);
 	xScale=1024*10000/ra8875.width;
@@ -270,6 +329,30 @@ int main()
 				text_drawSelected(&g_txtWaveSine);
 				text_drawSelected(&g_txtWaveSquare);
 				text_drawSelected(&g_txtWaveTriangle);
+
+				text_drawSelected(&g_txtFilterHeader);
+				text_drawSelected(&g_txtFilterLow);
+				text_drawSelected(&g_txtFilterBand);
+				text_drawSelected(&g_txtFilterHigh);
+
+				text_drawSelected(&g_txtSld1Header);
+				text_drawSelected(&g_txtSld1Attack);
+				text_drawSelected(&g_txtSld1Hold);
+				text_drawSelected(&g_txtSld1Release);
+				text_drawSelected(&g_txtSld1FCourse);
+				text_drawSelected(&g_txtSld1FFine);
+				text_drawSelected(&g_txtSld1QFactor);
+				text_drawSelected(&g_txtSld1Volume);
+
+				text_drawSelected(&g_txtSld2Header);
+				text_drawSelected(&g_txtSld2Attack);
+				text_drawSelected(&g_txtSld2Hold);
+				text_drawSelected(&g_txtSld2Release);
+				text_drawSelected(&g_txtSld2FCourse);
+				text_drawSelected(&g_txtSld2FFine);
+				text_drawSelected(&g_txtSld2QFactor);
+				text_drawSelected(&g_txtSld2Volume);
+
 				g_stateLCD=OPTIONS;
 			}
 		}
@@ -343,33 +426,167 @@ int main()
 					if(text_isTouched(&g_txtWaveSine,tx,ty))
 					{
 						g_waveType=SINE;
-						updateWave();
 						g_waveUpdated=1;
 					}
 					else if(text_isTouched(&g_txtWaveSquare,tx,ty))
 					{
 						g_waveType=SQUARE;
-						updateWave();
 						g_waveUpdated=1;
 					}
 					else if(text_isTouched(&g_txtWaveTriangle,tx,ty))
 					{
 						g_waveType=SAW;
-						updateWave();
 						g_waveUpdated=1;
+					}
+					else if(text_isTouched(&g_txtFilterLow,tx,ty))
+					{
+						g_filterType=LOW;
+						g_filterUpdated=1;
+					}
+					else if(text_isTouched(&g_txtFilterBand,tx,ty))
+					{
+						g_filterType=BAND;
+						g_filterUpdated=1;
+					}
+					else if(text_isTouched(&g_txtFilterHigh,tx,ty))
+					{
+						g_filterType=HIGH;
+						g_filterUpdated=1;
+					}
+					else if(text_isTouched(&g_txtSld1Attack,tx,ty))
+					{
+						g_sld1.levelID=MICRO_ATTACK;
+						MYstrcpy(g_sld1.label.label,g_attackLabel);
+						g_sld1.level=&g_attack;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1Hold,tx,ty))
+					{
+						g_sld1.levelID=MICRO_HOLD;
+						MYstrcpy(g_sld1.label.label,g_holdLabel);
+						g_sld1.level=&g_hold;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1Release,tx,ty))
+					{
+						g_sld1.levelID=MICRO_RELEASE;
+						MYstrcpy(g_sld1.label.label,g_releaseLabel);
+						g_sld1.level=&g_release;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1FCourse,tx,ty))
+					{
+						g_sld1.levelID=MICRO_FILTER_COURSE;
+						MYstrcpy(g_sld1.label.label,g_filterCourseLabel);
+						g_sld1.level=&g_filterCourse;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1FFine,tx,ty))
+					{
+						g_sld1.levelID=MICRO_FILTER_FINE;
+						MYstrcpy(g_sld1.label.label,g_filterFineLabel);
+						g_sld1.level=&g_filterFine;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1QFactor,tx,ty))
+					{
+						g_sld1.levelID=MICRO_FILTER_Q;
+						MYstrcpy(g_sld1.label.label,g_filterQLabel);
+						g_sld1.level=&g_filterQ;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld1Volume,tx,ty))
+					{
+						g_sld1.levelID=MICRO_VOLUME;
+						MYstrcpy(g_sld1.label.label,g_volumeLabel);
+						g_sld1.level=&g_volumeLevel;
+						g_sld1UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2Attack,tx,ty))
+					{
+						g_sld2.levelID=MICRO_ATTACK;
+						MYstrcpy(g_sld2.label.label,g_attackLabel);
+						g_sld2.level=&g_attack;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2Hold,tx,ty))
+					{
+						g_sld2.levelID=MICRO_HOLD;
+						MYstrcpy(g_sld2.label.label,g_holdLabel);
+						g_sld2.level=&g_hold;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2Release,tx,ty))
+					{
+						g_sld2.levelID=MICRO_RELEASE;
+						MYstrcpy(g_sld2.label.label,g_releaseLabel);
+						g_sld2.level=&g_release;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2FCourse,tx,ty))
+					{
+						g_sld2.levelID=MICRO_FILTER_COURSE;
+						MYstrcpy(g_sld2.label.label,g_filterCourseLabel);
+						g_sld2.level=&g_filterCourse;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2FFine,tx,ty))
+					{
+						g_sld2.levelID=MICRO_FILTER_FINE;
+						MYstrcpy(g_sld2.label.label,g_filterFineLabel);
+						g_sld2.level=&g_filterFine;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2QFactor,tx,ty))
+					{
+						g_sld2.levelID=MICRO_FILTER_Q;
+						MYstrcpy(g_sld2.label.label,g_filterQLabel);
+						g_sld2.level=&g_filterQ;
+						g_sld2UpdatedMenu=1;
+					}
+					else if(text_isTouched(&g_txtSld2Volume,tx,ty))
+					{
+						g_sld2.levelID=MICRO_VOLUME;
+						MYstrcpy(g_sld2.label.label,g_volumeLabel);
+						g_sld2.level=&g_volumeLevel;
+						g_sld2UpdatedMenu=1;
+					}
+
+					if(g_waveUpdated)
+					{
+						waveTextAppend();
+						updateWave();
+					}
+					else if(g_filterUpdated)
+					{
+						filterTextAppend();
+						updateFilter();
+					}
+					else if(g_sld1UpdatedMenu)
+					{
+						g_sld1UpdatedMenu=0;
+						updateSld1();
+					}
+					else if(g_sld2UpdatedMenu)
+					{
+						g_sld2UpdatedMenu=0;
+						updateSld2();
 					}
 				}
 			}
 		}
-		if(g_keyChange && g_stateLCD==AUDIO)
+		if(g_keyChange)
 		{
 			g_keyChange=0;
 			keyTypeAppend();
 			chordTextAppend();
 			keyTextAppend();
-			text_draw(&g_txtKey);
-			text_draw(&g_txtKeyType);
-			text_draw(&g_txtChord);
+			if(g_stateLCD==AUDIO)
+			{
+				text_draw(&g_txtKey);
+				text_draw(&g_txtKeyType);
+				text_draw(&g_txtChord);
+			}
 		}
 		scanButtons();
 	}
@@ -401,6 +618,13 @@ void Timer0IntHandler()
 
 	if(g_waveUpdated)
 	{
+		g_waveUpdated=0;
 		SENDCOMMAND_MICRO(MICRO_WAVETYPE,g_waveType);
+	}
+
+	if(g_filterUpdated)
+	{
+		g_filterUpdated=0;
+		SENDCOMMAND_MICRO(MICRO_FILTERTYPE,g_filterType);
 	}
 }

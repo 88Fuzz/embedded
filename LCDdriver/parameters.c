@@ -25,7 +25,7 @@ char g_holdLabel[5]="Hold";
 
 //Release
 uint8_t g_release;
-char g_releaseQLabel[8]="Release";
+char g_releaseLabel[8]="Release";
 
 //Filter Fine
 uint8_t g_filterFine;

@@ -14,6 +14,9 @@ extern uint8_t g_sld1Updated;
 extern uint8_t g_sld2Updated;
 extern uint8_t g_gridUpdated;
 extern uint8_t g_waveUpdated;
+extern uint8_t g_filterUpdated;
+extern uint8_t g_sld1UpdatedMenu;
+extern uint8_t g_sld2UpdatedMenu;
 
 
 void Timer0IntHandler();
@@ -30,5 +33,8 @@ void chordTextAppend();
 void keyTextAppend();
 void waveTextAppend();
 void filterTextAppend();
+void updateFilter();
+void updateSld1();
+void updateSld2();
 
 #endif /* MYFUNCS_H_ */
