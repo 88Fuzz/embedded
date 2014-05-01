@@ -21,8 +21,8 @@ static const float fSizeLookupTable = 1024.0;
 static const float fPi = 3.14159265359;
 static const float fTwoPi = 2*3.14159265359;
 static const float fDataDivisor = 1.0 / 4095.0;
-static const float fFilterDivisorCourse = (1.0 / 4095.0) * 20000;
-static const float fFilterDivisorFine = (1.0 / 4095.0) * 4000;
+//static const float fFilterDivisorCourse = (1.0 / 4095.0) * 20000;
+//static const float fFilterDivisorFine = (1.0 / 4095.0) * 4000;
 const float* pfWaveTable = pfSawtoothTable;
 
 static volatile float fVolume;
@@ -39,10 +39,10 @@ void WaveTableSelect(uint16_t ui16Type)
 {
     switch (ui16Type)
     {
-	case 0:
+	case 1:
 	    pfWaveTable = pfSawtoothTable;
 	    break;
-	case 1:
+	case 2:
 	    pfWaveTable = pfSquareTable;
 	    break;
 	default:
@@ -74,7 +74,7 @@ void NoteInitialize(Note* CurrentNote)
  * initialize a given note
  */
 {
-	CurrentNote->fFrequency = 0;
+	CurrentNote->fCutoffBase = 0;
 	// value to increment each time increment function is called
 	CurrentNote->fIncrement = 0;
 	CurrentNote->fPosition = 0;
@@ -106,14 +106,14 @@ void NoteInterpolate(Note* CurrentNote)
 	CurrentNote->fSample += pfWaveTable[(int) fMin] * fDiffMin;
 }
 
-void NoteOn(Note* CurrentNote, float fFrequency)
+void NoteOn(Note* CurrentNote, float fCutoffBase)
 /*
  * turn note on and set its corresponding frequency
  */
 {
 	CurrentNote->ui8State = NOTE_ON;
-	CurrentNote->fFrequency = fFrequency;
-	CurrentNote->fIncrement = fSizeLookupTable * (fFrequency * fSampleRateDiv);
+	CurrentNote->fCutoffBase = fCutoffBase;
+	CurrentNote->fIncrement = fSizeLookupTable * (fCutoffBase * fSampleRateDiv);
 }
 
 void NoteOff(Note* CurrentNote)
@@ -133,13 +133,13 @@ void NotePlay(Note* CurrentNote)
 	NoteInterpolate(CurrentNote);
 }
 
-void NoteSet(Note* CurrentNote, float fFrequency)
+void NoteSet(Note* CurrentNote, float fCutoffBase)
 /*
  * sets the note's frequency/pitch
  */
 {
-	CurrentNote->fFrequency = fFrequency;
-	CurrentNote->fIncrement = fSizeLookupTable * (fFrequency * fSampleRateDiv);
+	CurrentNote->fCutoffBase = fCutoffBase;
+	CurrentNote->fIncrement = fSizeLookupTable * (fCutoffBase * fSampleRateDiv);
 }
 
 
@@ -185,7 +185,7 @@ void NoteArrayNoteOn(uint32_t ui32Data)
 {
     uint16_t n = 0;
     uint16_t m = SIZE_NOTE_ARRAY;
-    float fFrequency = pfNoteFrequency[ui32Data];
+    float fCutoffBase = pfNoteFrequency[ui32Data];
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
@@ -197,7 +197,7 @@ void NoteArrayNoteOn(uint32_t ui32Data)
 	}
 	else
 	{
-	    if (NoteArray[n].fFrequency == fFrequency) 
+	    if (NoteArray[n].fCutoffBase == fCutoffBase) 
 	    {
 		// note is already on, no need to duplicate
 		return;
@@ -207,7 +207,7 @@ void NoteArrayNoteOn(uint32_t ui32Data)
     
     if (m != SIZE_NOTE_ARRAY)
     {
-	NoteOn(&NoteArray[m], fFrequency); 
+	NoteOn(&NoteArray[m], fCutoffBase); 
     }
 }
 
@@ -215,11 +215,11 @@ void NoteArrayNoteOn(uint32_t ui32Data)
 void NoteArrayNoteOff(uint32_t ui32Data)
 {
     uint16_t n;
-    float fFrequency = pfNoteFrequency[ui32Data];
+    float fCutoffBase = pfNoteFrequency[ui32Data];
     
     for (n = 0; n < SIZE_NOTE_ARRAY; n++)
     {
-	if (NoteArray[n].fFrequency == fFrequency) 
+	if (NoteArray[n].fCutoffBase == fCutoffBase) 
 	{
 	    NoteOff(&NoteArray[n]); 
 	    //break;
@@ -248,11 +248,8 @@ void NoteArrayAllOff()
 void InitializeFilter()
 {
     // 2 * sin ( pi * F / Fs)
-    uint16_t ui16Index;
-    FilterParams.fFrequency = 2000.0;
-    ui16Index = (uint16_t) fPi * FilterParams.fFrequency * fSampleRateDiv * fSizeLookupTable;
-    FilterParams.fCutoff = 2 * pfSineTable[ui16Index];
-    // ranges 0.5 to inf
+    FilterParams.fCutoffBase = FilterParams.fCutoff  = fDataDivisor * 4095 * 0.25;
+    // ranges 0 to 2
     FilterParams.fDamping = 0.2;
     FilterParams.fLow = 0.0;
     FilterParams.fHigh = 0.0;
@@ -269,7 +266,7 @@ void FilterSetCutoffCourse(uint32_t ui32Data)
  */ 
 {
     FilterParams.fCutoff = fDataDivisor * ui32Data * 0.25;
-    FilterParams.fFrequency = FilterParams.fCutoff;
+    FilterParams.fCutoffBase = FilterParams.fCutoff;
 }
 
 void FilterSetCutoffFine(uint32_t ui32Data)
@@ -277,19 +274,20 @@ void FilterSetCutoffFine(uint32_t ui32Data)
  * TODO: cutoff
  */
 {
-    FilterParams.fCutoff = FilterParams.fFrequency + fDataDivisor * ui32Data * 0.1;
+    FilterParams.fCutoff = FilterParams.fCutoffBase + fDataDivisor * ui32Data * 0.1;
     /*
     uint16_t ui16Index;
-    float fFrequency = FilterParams.fFrequency;
-    fFrequency = ui32Data * fDataDivisor * 0.1;
-    ui16Index = (uint16_t) fPi * fFrequency * fSampleRateDiv * fSizeLookupTable;
+    float fCutoffBase = FilterParams.fCutoffBase;
+    fCutoffBase = ui32Data * fDataDivisor * 0.1;
+    ui16Index = (uint16_t) fPi * fCutoffBase * fSampleRateDiv * fSizeLookupTable;
     FilterParams.fCutoff = 2 * pfSineTable[ui16Index];
     */
 }
 
 void FilterSetDamping(uint32_t ui32Data)
 {
-    FilterParams.fDamping = fDataDivisor * ui32Data + 0.05;
+    ui32Data = 4095 - ui32Data;
+    FilterParams.fDamping = fDataDivisor * 0.5 * ui32Data + 0.035;
 }
 
 void FilterSetOutput(uint32_t ui32Type)
@@ -300,13 +298,11 @@ void FilterSetOutput(uint32_t ui32Type)
 	    FilterParams.pfOutput = &(FilterParams.fLow);
 	    break;
 	case 1:
-	    FilterParams.pfOutput = &(FilterParams.fBand);
-	    break;
-	case 2:
 	    FilterParams.pfOutput = &(FilterParams.fHigh);
 	    break;
 	default:
-	    FilterParams.pfOutput = &(FilterParams.fLow);
+	    FilterParams.pfOutput = &(FilterParams.fBand);
+	    break;
     }
 }
 
@@ -340,8 +336,8 @@ float FilterProcess(float fInput)
     FilterParams.fDelay[0] = FilterParams.fBand;
     FilterParams.fDelay[1] = FilterParams.fLow;
     
-    //return *(FilterParams.pfOutput);
-    return FilterParams.fBand;
+    return *(FilterParams.pfOutput);
+    //return FilterParams.fBand;
 }
 
 //*****************************************************************************

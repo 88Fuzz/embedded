@@ -66,18 +66,18 @@ def SawtoothWave():
 def NoteFrequency():
     notes = 84
     NoteTable = [0]*notes
-    NoteTable[0] =   65.4063913251 / 2
-    NoteTable[1] =   69.2956577442 / 2
-    NoteTable[2] =   73.4161919794 / 2
-    NoteTable[3] =   77.7817459305 / 2 
-    NoteTable[4] =   82.4068892282 / 2
-    NoteTable[5] =   87.3070578583 / 2
-    NoteTable[6] =   92.4986056779 / 2
-    NoteTable[7] =   97.9988589954 / 2
-    NoteTable[8] =  103.8261743950 / 2
-    NoteTable[9] =  110.0000000000 / 2 
-    NoteTable[10] = 116.5409403795 / 2 
-    NoteTable[11] = 123.4708253140 / 2
+    NoteTable[0] =   65.4063913251 / 4
+    NoteTable[1] =   69.2956577442 / 4
+    NoteTable[2] =   73.4161919794 / 4
+    NoteTable[3] =   77.7817459305 / 4 
+    NoteTable[4] =   82.4068892282 / 4
+    NoteTable[5] =   87.3070578583 / 4
+    NoteTable[6] =   92.4986056779 / 4
+    NoteTable[7] =   97.9988589954 / 4
+    NoteTable[8] =  103.8261743950 / 4
+    NoteTable[9] =  110.0000000000 / 4 
+    NoteTable[10] = 116.5409403795 / 4 
+    NoteTable[11] = 123.4708253140 / 4
     
     for m in range(1, notes//12):
         index = m*12
@@ -97,5 +97,5 @@ def NoteFrequency():
 if __name__ == "__main__":
     #SineWave()
     #SquareWave()
-    SawtoothWave()
-    #NoteFrequency()
+    #SawtoothWave()
+    NoteFrequency()

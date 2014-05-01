@@ -124,11 +124,9 @@ void Timer0IntHandler(void)
 			case CMD_SET_FILTER_TYPE:
 				FilterSetOutput(ui32SPIRx & DATA_MASK);
 				break;
-			/*
 			case CMD_SET_WAVEFORM_TYPE:
 				WaveTableSelect(ui32SPIRx & DATA_MASK);
 				break;
-			*/
 			case CMD_SET_VOLUME:
 				SetVolume(ui32SPIRx & DATA_MASK);
 				break;
@@ -293,7 +291,7 @@ int main(void)
 		/***********************************************
 		 preperation of sample for dac output
 		***********************************************/
-        fOutSample *= 0.2;
+        fOutSample *= 0.12;	// scale to keep things from getting too loudS
         fOutSample *= GetVolume();
         // DC offset to allow sample to rest between 0 and 3V
         fOutSample += 0.5;                                      

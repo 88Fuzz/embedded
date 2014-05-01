@@ -31,7 +31,7 @@ typedef struct
 {
     uint8_t ui8State;		// on/off state of note
     uint16_t ui16Sample;	// output sample DAC
-    volatile float fFrequency;	// note frequency
+    volatile float fCutoffBase;	// note frequency
     float fIncrement;
     float fPosition;		// wave table position
     float fSample;		// output sample float
@@ -40,7 +40,7 @@ typedef struct
 
 typedef struct
 {
-    volatile float fFrequency;
+    volatile float fCutoffBase;
     volatile float fCutoff;
     volatile float fDamping;
     float fLow;
@@ -63,10 +63,10 @@ void WaveTableSelect(uint16_t ui16Type);
 void NoteIncrement(Note* CurrentNote);
 void NoteInitialize(Note* CurrentNote);
 void NoteInterpolate(Note* CurrentNote);
-void NoteOn(Note* CurrentNote, float fFrequency);
+void NoteOn(Note* CurrentNote, float fCutoffBase);
 void NoteOff(Note* CurrentNote);
 void NotePlay(Note* CurrentNote);
-void NoteSet(Note* CurrentNote, float fFrequency);
+void NoteSet(Note* CurrentNote, float fCutoffBase);
 
 void SineInitialize();
 void SquareInitialize();
